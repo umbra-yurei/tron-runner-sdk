@@ -1,0 +1,470 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tron runner SDK conformance adapter protocol",
+  "description": "AUTHORED source of the messages between the conformance harness and an SDK adapter process (JSON lines over stdio). `#/definitions/<Name>` references that are not defined here name definitions of the AsyncAPI protocol (protocol/asyncapi.json), which tools/bundle.ts adds to the same bundle, so wire values are never restated. Bindings are generated into every package by `npm run generate`.",
+  "definitions": {
+    "HandlerOutcomeKind": {
+      "type": "string",
+      "description": "How a scripted handler finishes.",
+      "enum": [
+        "reply_ok",
+        "reply_err"
+      ]
+    },
+    "HandlerScript": {
+      "type": "object",
+      "description": "One handler the adapter registers, and what it does when Tron delivers work for its key. The adapter registers a real SDK handler that waits `delay_ms` and then returns `outcome` carrying `message`; the harness scripts handlers this way so no SDK has to expose test hooks beyond its public API.",
+      "required": [
+        "handler_key",
+        "outcome",
+        "message",
+        "delay_ms"
+      ],
+      "properties": {
+        "handler_key": {
+          "$ref": "#/definitions/RunnerHandlerKey"
+        },
+        "outcome": {
+          "$ref": "#/definitions/HandlerOutcomeKind"
+        },
+        "message": {
+          "type": "string"
+        },
+        "delay_ms": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SecretStoreKind": {
+      "type": "string",
+      "description": "Which delivery-secret persistence the SDK is given. `file` is the SDK's local-file default pointed at `directory`. `tampered` is a custom store, written through the SDK's pluggable-store interface, that wraps the file default and returns a wrong secret from every load.",
+      "enum": [
+        "file",
+        "tampered"
+      ]
+    },
+    "SecretStoreConfig": {
+      "type": "object",
+      "description": "Delivery-secret persistence for one adapter process.",
+      "required": [
+        "kind",
+        "directory"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/SecretStoreKind"
+        },
+        "directory": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "StartCommand": {
+      "type": "object",
+      "description": "Connect, authenticate and announce, then deliver work to the scripted handlers. Answered by `connected` or `connect_failed`.",
+      "required": [
+        "type",
+        "tron_url",
+        "token",
+        "concurrency_capacity",
+        "handlers",
+        "secret_store"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "start"
+          ]
+        },
+        "tron_url": {
+          "type": "string",
+          "description": "The runner WebSocket URL, e.g. as printed by the harness."
+        },
+        "token": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "runner_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "concurrency_capacity": {
+          "type": "integer"
+        },
+        "handlers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HandlerScript"
+          }
+        },
+        "secret_store": {
+          "$ref": "#/definitions/SecretStoreConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportPendingCommand": {
+      "type": "object",
+      "description": "Report an outcome for a delivery this or an earlier process accepted, using the secret the SDK's store holds for it. Answered by `report_recorded`, `report_rejected` or `error`.",
+      "required": [
+        "type",
+        "delivery_id",
+        "outcome"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "report_pending"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "outcome": {
+          "$ref": "#/definitions/RunOutcome"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListPendingCommand": {
+      "type": "object",
+      "description": "List the accepted-but-unreported deliveries the SDK's store holds. Answered by `pending`.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "list_pending"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "StopCommand": {
+      "type": "object",
+      "description": "Drain gracefully: stop taking new work, let in-flight handlers finish and report, close the connection. Answered by `stopped`, after which the process exits.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "stop"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "AdapterCommandKind": {
+      "type": "string",
+      "description": "The `type` tag of every command the harness sends to an adapter, one JSON object per line on the adapter's standard input.",
+      "enum": [
+        "start",
+        "report_pending",
+        "list_pending",
+        "stop"
+      ]
+    },
+    "ConnectFailure": {
+      "type": "string",
+      "description": "Why `start` could not connect: `authentication_failed` (Tron answered `authentication_failed`), `announcement_rejected` (Tron answered `protocol_error` for the announcement) or `unreachable`.",
+      "enum": [
+        "authentication_failed",
+        "announcement_rejected",
+        "unreachable"
+      ]
+    },
+    "ReadyEvent": {
+      "type": "object",
+      "description": "The adapter process is up. Reports what the SDK package under test records about itself.",
+      "required": [
+        "type",
+        "sdk_version",
+        "protocol_version"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ready"
+          ]
+        },
+        "sdk_version": {
+          "type": "string"
+        },
+        "protocol_version": {
+          "$ref": "#/definitions/RunnerProtocolVersion"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectedEvent": {
+      "type": "object",
+      "description": "The SDK authenticated and its announcement was acknowledged.",
+      "required": [
+        "type",
+        "session_id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "connected"
+          ]
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConnectFailedEvent": {
+      "type": "object",
+      "description": "The SDK's connect call failed with a typed error.",
+      "required": [
+        "type",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "connect_failed"
+          ]
+        },
+        "reason": {
+          "$ref": "#/definitions/ConnectFailure"
+        }
+      },
+      "additionalProperties": false
+    },
+    "HandlerInvokedEvent": {
+      "type": "object",
+      "description": "A registered handler was called for a delivery.",
+      "required": [
+        "type",
+        "handler_key",
+        "delivery_id",
+        "run_id",
+        "job_id",
+        "job_name"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "handler_invoked"
+          ]
+        },
+        "handler_key": {
+          "$ref": "#/definitions/RunnerHandlerKey"
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "run_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "job_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "job_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DeliveryAcceptedEvent": {
+      "type": "object",
+      "description": "Tron answered `accepted` and the SDK persisted the delivery secret.",
+      "required": [
+        "type",
+        "delivery_id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "delivery_accepted"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AcceptRefusedEvent": {
+      "type": "object",
+      "description": "The SDK surfaced a typed accept-refused error and did not run the handler.",
+      "required": [
+        "type",
+        "delivery_id",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "accept_refused"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reason": {
+          "$ref": "#/definitions/AcceptRefusal"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportRecordedEvent": {
+      "type": "object",
+      "description": "Tron recorded a report.",
+      "required": [
+        "type",
+        "delivery_id",
+        "late"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "report_recorded"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "late": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ReportRejectedEvent": {
+      "type": "object",
+      "description": "The SDK surfaced a typed report-rejected error.",
+      "required": [
+        "type",
+        "delivery_id",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "report_rejected"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reason": {
+          "$ref": "#/definitions/ReportRejection"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PendingEvent": {
+      "type": "object",
+      "description": "The accepted-but-unreported deliveries in the SDK's secret store.",
+      "required": [
+        "type",
+        "delivery_ids"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "pending"
+          ]
+        },
+        "delivery_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "StoppedEvent": {
+      "type": "object",
+      "description": "The drain finished; the process exits next.",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "stopped"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "AdapterErrorEvent": {
+      "type": "object",
+      "description": "A failure outside the typed paths above. Any `error` fails the scenario.",
+      "required": [
+        "type",
+        "message"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AdapterEventKind": {
+      "type": "string",
+      "description": "The `type` tag of every event an adapter writes, one JSON object per line on its standard output.",
+      "enum": [
+        "ready",
+        "connected",
+        "connect_failed",
+        "handler_invoked",
+        "delivery_accepted",
+        "accept_refused",
+        "report_recorded",
+        "report_rejected",
+        "pending",
+        "stopped",
+        "error"
+      ]
+    }
+  }
+}

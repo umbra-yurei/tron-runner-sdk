@@ -1,0 +1,4712 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tron API",
+    "description": "Tron backend API: health, public runtime configuration, the authenticated caller's identity, and (in later tasks) scheduling endpoints.",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/admin/owners": {
+      "get": {
+        "tags": [],
+        "operationId": "listAdminOwners",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminOwnerResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/owners/scope-counts": {
+      "post": {
+        "tags": [],
+        "operationId": "getAdminScopeCounts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminScopeCountsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminScopeCountsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/owners/{owner_kind}/{owner_id}": {
+      "get": {
+        "tags": [],
+        "operationId": "getAdminOwnerDetail",
+        "parameters": [
+          {
+            "name": "owner_kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/OwnerKind"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOwnerDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/owners/{owner_kind}/{owner_id}/usage": {
+      "get": {
+        "tags": [],
+        "operationId": "getAdminOwnerUsage",
+        "parameters": [
+          {
+            "name": "owner_kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/OwnerKind"
+            }
+          },
+          {
+            "name": "owner_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "bucket",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UsageBucket"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUsageBucketResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": ""
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": [],
+        "summary": "Public, unauthenticated configuration the frontend needs before it can\nauthenticate at all (which auth mode, which OIDC issuer/client/scopes).\nDeliberately contains no secrets and performs no token validation.",
+        "operationId": "getPublicConfig",
+        "responses": {
+          "200": {
+            "description": "Public runtime configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [],
+        "summary": "Liveness check. Unauthenticated by design: infrastructure (load\nbalancers, orchestrators) must be able to probe this without credentials.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": [],
+        "operationId": "listJobs",
+        "parameters": [
+          {
+            "name": "include_deleted",
+            "in": "query",
+            "description": "Also list jobs the owner has deleted, which carry `deleted_at`. Omit it\nto list only live jobs.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Jobs in the resolved acting context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [],
+        "operationId": "createJob",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "tags": [],
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job in the resolved acting context, deleted or not",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [],
+        "operationId": "replaceJob",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Job replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The job is deleted; restore it first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [],
+        "operationId": "deleteJob",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Job deleted: it keeps its run history, stops being scheduled and served publicly, and can be restored. Deleting a deleted job also succeeds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/restore": {
+      "post": {
+        "tags": [],
+        "operationId": "restoreJob",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job restored; its schedule resumes from now. Restoring a live job returns it unchanged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/{job_id}/runs": {
+      "get": {
+        "tags": [],
+        "operationId": "listJobRuns",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Narrow the listing to one kind of run. Omit it for every run.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RunListFilter"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page number. Negative values select the first page.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Runs per page. Values are clamped to keep a single response bounded.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A newest-first page of runs, including skipped and missed occurrences unless a filter narrows them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunPageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [],
+        "operationId": "triggerJobRun",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "A manual run was created and is pending delivery, exactly as a scheduled run would be",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The job is deleted; restore it first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/runs/{run_id}/cancel": {
+      "post": {
+        "tags": [],
+        "operationId": "cancelJobRun",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "description": "Run id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pending or delivering run was cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The run was already accepted or running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCancellationRefusal"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/timing-stats": {
+      "get": {
+        "tags": [],
+        "operationId": "getJobTimingStats",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive start of the range, compared with each run's finish time.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "description": "Exclusive end of the range. At most a year after `from`.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "bucket",
+            "in": "query",
+            "description": "The width of each graph bucket, aligned to UTC.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TimingBucket"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Execution and total duration percentiles of the job's completed runs, per time bucket and per runner key. A duration a run or delivery lacks timestamps for is left out of its metric",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobTimingStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The range is invalid or covers too many runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/visibility": {
+      "put": {
+        "tags": [],
+        "operationId": "setJobVisibility",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobVisibilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Visibility set; a job made private stops being served publicly immediately",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The job is deleted; restore it first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/webhook-signing-secrets": {
+      "get": {
+        "tags": [],
+        "operationId": "listWebhookSigningSecrets",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Redacted signing-secret versions; plaintext is never returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookSigningSecretResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [],
+        "summary": "Creates version one. Copy the returned secret immediately; later reads cannot retrieve it.",
+        "operationId": "createWebhookSigningSecret",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "First signing secret created. Copy secret immediately: it is shown only in this response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealedWebhookSigningSecretResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/webhook-signing-secrets/rotate": {
+      "post": {
+        "tags": [],
+        "summary": "Rotates the secret. The preceding version remains valid for 24 hours; copy the returned secret immediately.",
+        "operationId": "rotateWebhookSigningSecret",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signing secret rotated. The preceding version remains valid for a 24-hour overlap; copy secret immediately because it cannot be retrieved later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevealedWebhookSigningSecretResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [],
+        "summary": "The authenticated caller's identity and acting organization.",
+        "description": "Reaching this handler at all means the auth middleware already verified a\nbearer token (see [`crate::auth`]), so there is no unauthenticated path\nthrough it: the `401` documented below is produced by the middleware, and\ncarries no body — `umbra-auth` answers a failed verification with a bare\nstatus.",
+        "operationId": "getMe",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The authenticated caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The X-Cruma-Org header is malformed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or otherwise invalid bearer token"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/public/jobs/{public_id}": {
+      "get": {
+        "tags": [],
+        "summary": "Status and history of a public job. A job that is private, deleted or\nnever existed answers identically.",
+        "operationId": "getPublicJob",
+        "parameters": [
+          {
+            "name": "public_id",
+            "in": "path",
+            "description": "The job's public identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The job's public status and history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicJobResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No public job has this identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runner-capabilities": {
+      "get": {
+        "tags": [],
+        "operationId": "listRunnerCapabilities",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current handler suggestions and session readiness in the resolved acting context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerCapabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/runner-sessions": {
+      "get": {
+        "tags": [],
+        "operationId": "listLiveRunnerSessions",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Currently connected runners in the resolved acting context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiveRunnerSession"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/worker-api-keys": {
+      "get": {
+        "tags": [],
+        "operationId": "listWorkerApiKeys",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Worker API keys in the resolved acting context, newest first, including revoked keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkerApiKeyResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [],
+        "operationId": "createWorkerApiKey",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerApiKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Worker API key created; the token is shown only in this response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedWorkerApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/worker-api-keys/{key_id}/revoke": {
+      "post": {
+        "tags": [],
+        "operationId": "revokeWorkerApiKey",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "description": "Worker API key id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Worker API key revoked; runners can no longer authenticate with it. Revoking an already revoked key is a no-op",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerApiKeyResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcceptRefusal": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "No delivery with this id was pushed to this connection's session under an unrevoked worker API key. Accept on the connection that received the `work`.",
+            "enum": [
+              "unknown_delivery"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The delivery's `accept_deadline` had passed, including when it had already been marked failed to deliver.",
+            "enum": [
+              "delivery_timed_out"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "This same delivery was already accepted (or is in flight) or reported, or its run was cancelled. A cancelled run's delivery stays `pushed`; the accept is refused because the run is cancelled. For `one_runner`, another delivery for this run already won the run-scoped accept race. Broadcast modes do not choose a winner.",
+            "enum": [
+              "already_resolved"
+            ]
+          }
+        ],
+        "description": "Why `accept` was refused."
+      },
+      "ActingContext": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "No `X-Cruma-Org` header was present: the caller is acting in their\nown personal context.",
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "personal"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The caller named an organization via `X-Cruma-Org` and is an active\nmember of it.",
+            "required": [
+              "org_id",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "organization"
+                ]
+              },
+              "org_id": {
+                "$ref": "#/components/schemas/OrgId"
+              }
+            }
+          }
+        ],
+        "description": "Which organization, if any, the caller is acting as. Derived from the\n[`X_CRUMA_ORG`] header by the [`FromRequestParts`] impl below.\n\n# Organization means a verified member\n\nThe header is only an assertion. The extractor produces\n[`ActingContext::Organization`] solely after the request's\n[`OrgMembership`] source answered that the authenticated *user* is an\nactive member of that organization; every other outcome is a refusal\n(see [`ActingContextRejection`]). So the value is safe to scope data by,\nand it still carries no *role*: membership is all it proves.\n\nValues built by hand (repository tests, for instance) are not verified;\nonly the extractor guarantees membership."
+      },
+      "AdminJobCount": {
+        "type": "object",
+        "required": [
+          "target_kind",
+          "schedule_kind",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "schedule_kind": {
+            "$ref": "#/components/schemas/ScheduleKind"
+          },
+          "target_kind": {
+            "$ref": "#/components/schemas/TargetKind"
+          }
+        }
+      },
+      "AdminJobResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "target_kind",
+          "schedule_kind",
+          "schedule_expression",
+          "visibility",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "last_run": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AdminLastRunResponse",
+                "description": "The job's most recently created run; absent when it never ran."
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "schedule_expression": {
+            "type": "string"
+          },
+          "schedule_kind": {
+            "$ref": "#/components/schemas/ScheduleKind"
+          },
+          "target_kind": {
+            "$ref": "#/components/schemas/TargetKind"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/JobVisibility"
+          }
+        }
+      },
+      "AdminLastRunResponse": {
+        "type": "object",
+        "description": "The state of a job's latest run. Carries no delivery detail, runner\ncredentials or result data.",
+        "required": [
+          "id",
+          "status",
+          "trigger",
+          "scheduled_for",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failure_kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunFailureKind"
+              }
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "status_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatusReason"
+              }
+            ]
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          }
+        }
+      },
+      "AdminOwnerDetailResponse": {
+        "type": "object",
+        "required": [
+          "owner_kind",
+          "owner_id",
+          "jobs",
+          "recent_runs",
+          "toggle_evidence",
+          "page",
+          "page_size"
+        ],
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJobResponse"
+            }
+          },
+          "owner_id": {
+            "type": "string"
+          },
+          "owner_kind": {
+            "$ref": "#/components/schemas/OwnerKind"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recent_runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobRunResponse"
+            }
+          },
+          "toggle_evidence": {
+            "$ref": "#/components/schemas/AdminToggleEvidence"
+          }
+        }
+      },
+      "AdminOwnerResponse": {
+        "type": "object",
+        "required": [
+          "owner_kind",
+          "owner_id",
+          "job_counts",
+          "active_worker_keys",
+          "toggle_evidence",
+          "totals"
+        ],
+        "properties": {
+          "active_worker_keys": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "first_seen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "job_counts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminJobCount"
+            }
+          },
+          "last_active": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "owner_id": {
+            "type": "string"
+          },
+          "owner_kind": {
+            "$ref": "#/components/schemas/OwnerKind"
+          },
+          "toggle_evidence": {
+            "$ref": "#/components/schemas/AdminToggleEvidence"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/AdminUsageTotals"
+          }
+        }
+      },
+      "AdminScopeCount": {
+        "type": "object",
+        "required": [
+          "scope",
+          "job_count"
+        ],
+        "properties": {
+          "job_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Jobs the scope owns that are not deleted; zero when it has none."
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeKey"
+          }
+        }
+      },
+      "AdminScopeCountsRequest": {
+        "type": "object",
+        "required": [
+          "scopes"
+        ],
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeKey"
+            },
+            "description": "At most [`ADMIN_MAX_SCOPE_COUNTS`] scopes."
+          }
+        }
+      },
+      "AdminScopeCountsResponse": {
+        "type": "object",
+        "required": [
+          "counts"
+        ],
+        "properties": {
+          "counts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminScopeCount"
+            },
+            "description": "One entry per distinct requested scope, in the order first requested."
+          }
+        }
+      },
+      "AdminToggleEvidence": {
+        "type": "string",
+        "description": "Evidence available to Tron about the owner's feature toggle. Organizations\nare `Unknown` until cruma-web-api exposes an organization-level lookup.",
+        "enum": [
+          "enabled",
+          "revoked",
+          "unknown"
+        ]
+      },
+      "AdminUsageBucketResponse": {
+        "type": "object",
+        "required": [
+          "start",
+          "totals"
+        ],
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/AdminUsageTotals"
+          }
+        }
+      },
+      "AdminUsageTotals": {
+        "type": "object",
+        "required": [
+          "runs",
+          "succeeded",
+          "failures",
+          "total_run_time_ms",
+          "webhook_calls",
+          "worker_keys_used"
+        ],
+        "properties": {
+          "failures": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "runs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "succeeded": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_run_time_ms": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "webhook_calls": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "worker_keys_used": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiErrorBody": {
+        "type": "object",
+        "description": "Error body returned by the API namespace. Typed rather than assembled as\nJSON at the call site (ADR-2).\n\n`message` is human-readable detail for whoever is reading the response by\nhand; clients branch on [`ApiErrorBody::error`], never on the prose. It is\nomitted from the wire entirely when there is nothing useful to add beyond\nthe code.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorCode"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ApiErrorCode": {
+        "type": "string",
+        "description": "Machine-readable discriminant for [`ApiErrorBody::error`]. ADR-1: an\nenum, not a bare string, so clients match on a value the compiler knows.",
+        "enum": [
+          "not_found",
+          "job_deleted",
+          "invalid_acting_org",
+          "forbidden",
+          "org_membership_unavailable",
+          "tron_feature_disabled",
+          "tron_feature_unavailable",
+          "invalid_job_configuration",
+          "blocked_webhook_target",
+          "invalid_worker_api_key_request",
+          "invalid_admin_usage_range",
+          "admin_scope_counts_too_large",
+          "invalid_timing_range",
+          "timing_range_too_large",
+          "credential_generation_failed",
+          "webhook_signing_secret_unavailable",
+          "webhook_signing_secret_conflict",
+          "database_unavailable"
+        ]
+      },
+      "AuthMode": {
+        "type": "string",
+        "description": "How the backend authenticates requests.\n\n* [`AuthMode::Dev`] — no OIDC configuration read at all, permissive CORS,\n  and bearer tokens are **not verified**: the `dev.<subject>` bypass in\n  [`crate::auth`] is live. Intended for local development only.\n* [`AuthMode::Oidc`] — requires `AUTH_ISSUER`, `AUTH_JWKS_URI` and\n  `AUTH_CLIENT_ID` (all three are read by `umbra-auth`'s\n  `AuthConfig::from_env`; see [`crate::config::AuthSettings`]) and\n  enforces an explicit CORS origin allow-list.",
+        "enum": [
+          "dev",
+          "oidc"
+        ]
+      },
+      "CreatedWorkerApiKeyResponse": {
+        "type": "object",
+        "description": "Body of a successful `POST /api/worker-api-keys`: the key's metadata and\nits clear-text token. This is the only response that ever carries the\ntoken; the server keeps only a salted one-way digest of it.",
+        "required": [
+          "key",
+          "token"
+        ],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/WorkerApiKeyResponse"
+          },
+          "token": {
+            "type": "string",
+            "description": "The credential a worker presents to authenticate. Shown once; it\ncannot be retrieved again, only revoked and replaced."
+          }
+        }
+      },
+      "DatabaseHealthStatus": {
+        "type": "string",
+        "description": "Reachability of the configured Postgres pool at probe time.",
+        "enum": [
+          "ready",
+          "unavailable"
+        ]
+      },
+      "DeliveryMode": {
+        "type": "string",
+        "enum": [
+          "one_runner",
+          "every_connected",
+          "advanced_at_most",
+          "advanced_at_least"
+        ]
+      },
+      "DeliveryState": {
+        "type": "string",
+        "enum": [
+          "pushed",
+          "accepted",
+          "in_flight",
+          "succeeded",
+          "failed",
+          "failed_to_deliver"
+        ]
+      },
+      "DurationSummaryResponse": {
+        "type": "object",
+        "description": "Distribution of one duration over the samples that had it.",
+        "required": [
+          "samples"
+        ],
+        "properties": {
+          "max_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "p50_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Nearest-rank median, absent when there are no samples."
+          },
+          "p90_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Nearest-rank 90th percentile, absent when there are no samples."
+          },
+          "samples": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many runs or deliveries had the timestamps this duration needs."
+          }
+        }
+      },
+      "HandlerCapability": {
+        "type": "object",
+        "required": [
+          "handler_key",
+          "connected_session_count"
+        ],
+        "properties": {
+          "connected_session_count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "handler_key": {
+            "$ref": "#/components/schemas/RunnerHandlerKey"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "description": "Body of `GET /api/health`.",
+        "required": [
+          "status",
+          "database"
+        ],
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/DatabaseHealthStatus"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus"
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "string",
+        "description": "Discriminant for [`HealthResponse::status`]. ADR-1: an enum, not a bare\n`\"ok\"` string literal set at the handler call site.",
+        "enum": [
+          "ok"
+        ]
+      },
+      "JobDeliveryMode": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "mode"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "one_runner"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "mode"
+            ],
+            "properties": {
+              "minimum_success_count": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int32"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "every_connected"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "count",
+              "mode"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "advanced_at_most"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "count",
+              "mode"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "advanced_at_least"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Typed runner delivery contract.  It replaces the legacy fan-out pair so\nclients cannot combine a dispatch policy with an incompatible threshold."
+      },
+      "JobMissedRun": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "policy"
+            ],
+            "properties": {
+              "policy": {
+                "type": "string",
+                "enum": [
+                  "skip"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "limit",
+              "policy"
+            ],
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "policy": {
+                "type": "string",
+                "enum": [
+                  "deferred_until_runner"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "What to do when a runner is unavailable at a scheduled time."
+      },
+      "JobRequest": {
+        "type": "object",
+        "description": "Full, typed configuration accepted when creating or replacing a job.",
+        "required": [
+          "name",
+          "target",
+          "schedule",
+          "missed_run",
+          "delivery_timeout_seconds",
+          "lateness_threshold_seconds",
+          "delivery_mode"
+        ],
+        "properties": {
+          "delivery_mode": {
+            "$ref": "#/components/schemas/JobDeliveryMode"
+          },
+          "delivery_timeout_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lateness_threshold_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "miss_grace_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Null retains the scheduler-published default window."
+          },
+          "missed_run": {
+            "$ref": "#/components/schemas/JobMissedRun"
+          },
+          "name": {
+            "type": "string"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/JobSchedule"
+          },
+          "target": {
+            "$ref": "#/components/schemas/JobTarget"
+          }
+        }
+      },
+      "JobResponse": {
+        "type": "object",
+        "description": "Safe, client-visible job configuration. It intentionally contains no\nrunner credentials, delivery acceptance secrets, or opaque result data.",
+        "required": [
+          "id",
+          "name",
+          "target",
+          "schedule",
+          "missed_run",
+          "delivery_timeout_seconds",
+          "lateness_threshold_seconds",
+          "miss_grace_window",
+          "effective_miss_grace_seconds",
+          "delivery_mode",
+          "visibility",
+          "public_id",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deleted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the owner deleted the job; absent for a live job. A deleted job\nkeeps its run history, is never scheduled or triggered, and can be\nrestored."
+          },
+          "delivery_mode": {
+            "$ref": "#/components/schemas/JobDeliveryMode"
+          },
+          "delivery_timeout_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "effective_miss_grace_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Configured missed-start window, with the scheduler default resolved."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lateness_threshold_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "miss_grace_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "miss_grace_window": {
+            "$ref": "#/components/schemas/MissGraceWindow"
+          },
+          "missed_run": {
+            "$ref": "#/components/schemas/JobMissedRun"
+          },
+          "name": {
+            "type": "string"
+          },
+          "next_run_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the scheduler will next create a run for this job, which is what\na countdown should count down to. At or before the current time it\nmeans an occurrence is already due and awaiting the scheduler's next\npass. Absent when the schedule has no further occurrence."
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The identifier of the job's public page. It identifies the job to the\npublic only while `visibility` is `public`."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/JobSchedule"
+          },
+          "target": {
+            "$ref": "#/components/schemas/JobTarget"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/JobVisibility",
+            "description": "Whether anyone holding the public URL can read the job's status."
+          }
+        }
+      },
+      "JobRunPageResponse": {
+        "type": "object",
+        "description": "A page of the owner-visible history for one job.",
+        "required": [
+          "runs",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobRunResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "JobRunResponse": {
+        "type": "object",
+        "description": "One execution record of a job. Carries no runner credentials, delivery\nsecrets or opaque result data.",
+        "required": [
+          "id",
+          "job_id",
+          "status",
+          "trigger",
+          "scheduled_for",
+          "delivery_deadline",
+          "created_at",
+          "timings",
+          "deliveries"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunDeliveryResponse"
+            },
+            "description": "Each push of this run to a runner, oldest first. Empty for webhook\nruns and for runs not yet pushed."
+          },
+          "delivery_deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delivery_duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "How long the webhook request took, in milliseconds."
+          },
+          "failure_kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunFailureKind",
+                "description": "How a failed or timed-out run went wrong. Each run is attempted once;\nthere are no retries."
+              }
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "http_status_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The HTTP status a webhook answered with, when it answered at all."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "late_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the run was first seen open, or finished, past the job's\nlateness threshold. Its status is unaffected."
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "status_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatusReason",
+                "description": "Why the run is in a policy-driven state, e.g. a missed occurrence that\nwas skipped or deferred. Absent for ordinary runs."
+              }
+            ]
+          },
+          "timings": {
+            "$ref": "#/components/schemas/RunTimingResponse",
+            "description": "Durations derived from this run and its deliveries' durable timestamps."
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          }
+        }
+      },
+      "JobSchedule": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "expression",
+              "kind"
+            ],
+            "properties": {
+              "expression": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "cron"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "seconds",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "interval"
+                ]
+              },
+              "seconds": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ],
+        "description": "A future execution schedule. Intervals are expressed in whole seconds so\nthey round-trip precisely through Postgres' checked integer column."
+      },
+      "JobTarget": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "url",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "webhook"
+                ]
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "handler_key",
+              "kind"
+            ],
+            "properties": {
+              "handler_key": {
+                "$ref": "#/components/schemas/RunnerHandlerKey"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "runner"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Where a job sends its run. Webhook URLs are never used for runner jobs."
+      },
+      "JobTimingStatsResponse": {
+        "type": "object",
+        "description": "Body of `GET /api/jobs/{job_id}/timing-stats`.",
+        "required": [
+          "from",
+          "until",
+          "bucket",
+          "buckets",
+          "runners"
+        ],
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/TimingBucket"
+          },
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimingBucketResponse"
+            },
+            "description": "Ascending; buckets without a completed run are omitted."
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "runners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerTimingResponse"
+            },
+            "description": "Ordered by runner name. Empty for a webhook job."
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "JobVisibility": {
+        "type": "string",
+        "enum": [
+          "private",
+          "public"
+        ]
+      },
+      "JobVisibilityRequest": {
+        "type": "object",
+        "description": "Whether a job's public page is reachable.",
+        "required": [
+          "visibility"
+        ],
+        "properties": {
+          "visibility": {
+            "$ref": "#/components/schemas/JobVisibility"
+          }
+        }
+      },
+      "LiveRunnerSession": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "A pre-announce runner. It is eligible for every handler this release.",
+            "required": [
+              "session_id",
+              "worker_api_key_id",
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "legacy"
+                ]
+              },
+              "session_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Unique live WebSocket connection identifier."
+              },
+              "worker_api_key_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Worker API key that authenticated this live session."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A runner that sent one validated capability announcement.",
+            "required": [
+              "session_id",
+              "worker_api_key_id",
+              "handler_keys",
+              "concurrency_capacity",
+              "kind"
+            ],
+            "properties": {
+              "concurrency_capacity": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Positive maximum number of concurrent deliveries this session accepts.",
+                "minimum": 0
+              },
+              "display_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional human-readable name supplied by the runner."
+              },
+              "handler_keys": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RunnerHandlerKey"
+                },
+                "description": "Stable handler keys this runner can execute."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "announced"
+                ]
+              },
+              "protocol_version": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RunnerProtocolVersion",
+                    "description": "Typed protocol version supplied by the runner."
+                  }
+                ]
+              },
+              "runner_version": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional implementation version supplied by the runner."
+              },
+              "sdk_version": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional SDK version supplied by the runner."
+              },
+              "session_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Unique live WebSocket connection identifier."
+              },
+              "worker_api_key_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Worker API key that authenticated this live session."
+              }
+            }
+          }
+        ],
+        "description": "How Tron lists a currently connected runner session to its owner, by\n`kind`: `legacy` when the runner never sent `announce`, `announced` once it\ndid. Live only; nothing here is stored."
+      },
+      "MeResponse": {
+        "type": "object",
+        "description": "Body of `GET /api/me`: who the bearer token says the caller is, and which\norganization they are acting in for this request.",
+        "required": [
+          "subject",
+          "principal",
+          "acting",
+          "is_cruma_admin"
+        ],
+        "properties": {
+          "acting": {
+            "$ref": "#/components/schemas/ActingContext",
+            "description": "Resolved from the `X-Cruma-Org` request header; absent header means\n[`ActingContext::Personal`]. A named organization appears here only\nafter the caller was verified as an active member of it."
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_cruma_admin": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "principal": {
+            "$ref": "#/components/schemas/PrincipalKind"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The token subject: `sub` for a user, the service id for a machine\nidentity. Stable across requests and safe to key on."
+          }
+        }
+      },
+      "MissGraceWindow": {
+        "type": "object",
+        "description": "The server-owned bounds and fallback for a job's missed-start window.\nPublished through typed API responses so clients never copy scheduler\ntiming rules.",
+        "required": [
+          "minimum_seconds",
+          "maximum_seconds",
+          "default_seconds"
+        ],
+        "properties": {
+          "default_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximum_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minimum_seconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MissedRunPolicy": {
+        "type": "string",
+        "enum": [
+          "skip",
+          "deferred_until_runner"
+        ]
+      },
+      "OrgId": {
+        "type": "string",
+        "description": "An organization identifier, as named by the caller via the\n[`X_CRUMA_ORG`] header.\n\nThis value reaches logs and (eventually) database lookups, so it is\nconstrained to an opaque identifier charset at the edge -- ASCII\nalphanumerics, `-`, and `_` only -- via [`FromStr`], rather than being\nsanitised individually at each place it is later used."
+      },
+      "OwnerKind": {
+        "type": "string",
+        "enum": [
+          "user",
+          "organization"
+        ]
+      },
+      "PrincipalKind": {
+        "type": "string",
+        "description": "Which kind of principal a bearer token identified. ADR-1: an enum, not a\nbare string — `umbra-auth` genuinely resolves two different things (an\ninteractive user and a machine/service identity) and collapsing them into\none indistinguishable shape would lose that at the API boundary.",
+        "enum": [
+          "user",
+          "service"
+        ]
+      },
+      "ProtocolViolation": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A frame was not JSON for any runner frame (an unknown `type`, a missing or extra field, including a handler key that does not match the published handler-key schema), or was a binary frame.",
+            "enum": [
+              "malformed_message"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "Reserved; not sent today. A first frame other than `authenticate` is answered with `authentication_failed`.",
+            "enum": [
+              "not_authenticated"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "`authenticate` was sent again on an authenticated connection.",
+            "enum": [
+              "already_authenticated"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The announcement broke a constraint: zero capacity; no, too many, duplicate, blank or oversized handler keys; a blank or oversized display name or runner version; or a blank, oversized or non-semver SDK version.",
+            "enum": [
+              "invalid_announcement"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "`announce` was sent twice on one connection. Reconnect to replace the announcement.",
+            "enum": [
+              "already_announced"
+            ]
+          }
+        ],
+        "description": "How an authenticated runner broke the protocol."
+      },
+      "PublicConfig": {
+        "type": "object",
+        "description": "Body of `GET /api/config`. Tells the frontend how to authenticate, and\nwhere runners connect.",
+        "required": [
+          "mode",
+          "issuer",
+          "client_id",
+          "scopes",
+          "runner_socket_path",
+          "runner_authentication_timeout_seconds",
+          "miss_grace_window",
+          "compatibility_handler_key"
+        ],
+        "properties": {
+          "client_id": {
+            "type": "string"
+          },
+          "compatibility_handler_key": {
+            "$ref": "#/components/schemas/RunnerHandlerKey",
+            "description": "Compatibility key for a new runner job until the owner selects a\ncapability advertised by a connected runner."
+          },
+          "dev_token_prefix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The prefix a dev-mode bearer token must carry for\n[`crate::auth`]'s bypass to accept the rest of it as the subject —\n[`crate::auth::DEV_TOKEN_PREFIX`]. `None` in\n[`AuthMode::Oidc`], where no such bypass exists.\n\nPublished rather than left for the SPA to hard-code because tron has\nno dev-login endpoint to mint one (unlike ai-board): the SPA builds\nthe token itself, and ADR-1 is explicit that the same const living in\ntwo projects means it belongs in a generated client instead. It is a\ndev-only affordance and discloses nothing — in dev mode any caller\nwho can reach the port can already impersonate anyone, prefix known\nor not, and in OIDC mode this is `None` and the bypass is not wired."
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "miss_grace_window": {
+            "$ref": "#/components/schemas/MissGraceWindow",
+            "description": "Server-owned missed-start timing rules used by the generated job editor."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/AuthMode"
+          },
+          "runner_authentication_timeout_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds a runner has, after opening the WebSocket, to send its\n`authenticate` frame before the server answers\n`authentication_failed` and closes the connection —\n[`crate::runner_socket::AUTHENTICATION_TIMEOUT_SECONDS`].",
+            "minimum": 0
+          },
+          "runner_socket_path": {
+            "type": "string",
+            "description": "The path, on the API's own origin, where runners open their\nWebSocket — [`crate::runner_socket::path`]. That route is not an\nOpenAPI operation (it is a protocol, not a request/response), so it is\npublished here for the SPA's connection instructions rather than\ncopied into the frontend by hand (ADR-1, ADR-3)."
+          },
+          "scopes": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicDeliveryResponse": {
+        "type": "object",
+        "description": "One push of a run to a runner, without saying which runner.",
+        "required": [
+          "state",
+          "pushed_at",
+          "timings"
+        ],
+        "properties": {
+          "accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "late_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunOutcomeKind"
+              }
+            ]
+          },
+          "pushed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "timings": {
+            "$ref": "#/components/schemas/RunTimingResponse"
+          }
+        }
+      },
+      "PublicJobResponse": {
+        "type": "object",
+        "description": "A public job's status page.",
+        "required": [
+          "name",
+          "schedule",
+          "runs"
+        ],
+        "properties": {
+          "current_run": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PublicRunResponse",
+                "description": "The newest run still in progress, pushed to a runner or not."
+              }
+            ]
+          },
+          "last_result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PublicRunResponse",
+                "description": "The newest run that ended with a result (not a skipped occurrence)."
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "next_run_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "What a countdown should count down to; absent when the schedule has no\nfurther occurrence."
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicRunResponse"
+            },
+            "description": "The newest runs first, including skipped occurrences."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/JobSchedule"
+          }
+        }
+      },
+      "PublicRunResponse": {
+        "type": "object",
+        "description": "One run as a visitor sees it.",
+        "required": [
+          "status",
+          "trigger",
+          "scheduled_for",
+          "timings",
+          "deliveries"
+        ],
+        "properties": {
+          "deliveries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicDeliveryResponse"
+            }
+          },
+          "delivery_duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "failure_kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunFailureKind"
+              }
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "http_status_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "late_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "status_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatusReason"
+              }
+            ]
+          },
+          "timings": {
+            "$ref": "#/components/schemas/RunTimingResponse"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          }
+        }
+      },
+      "ReportRejection": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "No delivery with this id belongs to the reporting worker API key, or that key is revoked.",
+            "enum": [
+              "unknown_delivery"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The secret does not match the one issued in `accepted`, or the delivery was never accepted, so no secret was issued.",
+            "enum": [
+              "wrong_secret"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The secret matched, but the delivery already has its one final report.",
+            "enum": [
+              "not_in_flight"
+            ]
+          }
+        ],
+        "description": "Why `report` was rejected."
+      },
+      "RevealedWebhookSigningSecretResponse": {
+        "type": "object",
+        "description": "One-time create/rotate response. Copy `secret` immediately: later reads expose only metadata.",
+        "required": [
+          "signing_secret",
+          "secret"
+        ],
+        "properties": {
+          "secret": {
+            "type": "string"
+          },
+          "signing_secret": {
+            "$ref": "#/components/schemas/WebhookSigningSecretResponse"
+          }
+        }
+      },
+      "RunCancellationRefusal": {
+        "type": "object",
+        "description": "Typed detail returned when a run has already advanced beyond the owner\ncancellation window.  The status lets a generated client distinguish an\naccepted runner run from one whose execution is already running.",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          }
+        }
+      },
+      "RunDeliveryResponse": {
+        "type": "object",
+        "description": "One push of a run to a runner, as its owner sees it. Carries no\nacceptance secret; the public page drops the runner name and message.",
+        "required": [
+          "id",
+          "runner_name",
+          "state",
+          "pushed_at",
+          "accept_deadline",
+          "timings"
+        ],
+        "properties": {
+          "accept_deadline": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The instant after which an unaccepted push counts as failed to deliver."
+          },
+          "accepted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "late_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunOutcomeKind",
+                "description": "How the runner reported the run ending, once it has."
+              }
+            ]
+          },
+          "outcome_message": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The message the runner sent with its `Ok`/`Err` report, once it has."
+          },
+          "pushed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "runner_name": {
+            "type": "string",
+            "description": "Name of the worker API key whose runner received the push."
+          },
+          "state": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "timings": {
+            "$ref": "#/components/schemas/RunTimingResponse",
+            "description": "Durations derived from this delivery and its parent run's timestamps."
+          }
+        }
+      },
+      "RunFailureKind": {
+        "type": "string",
+        "enum": [
+          "webhook_non_success_status",
+          "webhook_timeout",
+          "webhook_connect_failed",
+          "webhook_request_failed",
+          "webhook_target_invalid",
+          "webhook_target_blocked",
+          "delivery_window_expired",
+          "delivery_interrupted"
+        ]
+      },
+      "RunListFilter": {
+        "type": "string",
+        "description": "Which runs a listing is narrowed to. Defined over the stored run\nvocabulary ([`RunStatus`], [`RunStatusReason`]) rather than a parallel set\nof states, so a client filtering by it and a client reading a run's own\nfields can never disagree about what a run is.",
+        "enum": [
+          "active",
+          "missed",
+          "failed",
+          "completed"
+        ]
+      },
+      "RunOutcome": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ok"
+            ],
+            "properties": {
+              "ok": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "err"
+            ],
+            "properties": {
+              "err": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "The result a runner reports: exactly one of `ok` or `err`, each carrying\na single string, so it serializes as `{\"ok\": \"...\"}` or `{\"err\": \"...\"}`."
+      },
+      "RunOutcomeKind": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "err"
+        ]
+      },
+      "RunStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "delivering",
+          "accepted",
+          "running",
+          "succeeded",
+          "failed",
+          "timed_out",
+          "cancelled",
+          "skipped",
+          "failed_to_deliver"
+        ]
+      },
+      "RunStatusReason": {
+        "type": "string",
+        "enum": [
+          "missed_policy_skip",
+          "missed_deferral_limit",
+          "missed_deferred",
+          "no_runner_in_window",
+          "personal_feature_disabled",
+          "job_deleted"
+        ]
+      },
+      "RunTimingResponse": {
+        "type": "object",
+        "description": "Canonical, nullable timing fields shared by private and public run and\nrunner-delivery responses. Values are signed millisecond differences\nbetween the persisted lifecycle timestamps; absent endpoints stay absent.",
+        "properties": {
+          "accept_wait_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Runner push until acceptance. Webhooks have no acceptance phase."
+          },
+          "execution_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Acceptance/request start until the runner report/webhook response."
+          },
+          "queue_wait_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Scheduled occurrence until the first runner push or webhook request."
+          },
+          "total_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Scheduled occurrence until the run or delivery finished."
+          }
+        }
+      },
+      "RunTrigger": {
+        "type": "string",
+        "enum": [
+          "scheduled",
+          "manual"
+        ]
+      },
+      "RunnerAnnouncement": {
+        "type": "object",
+        "description": "What a runner declares about its connection in `announce`.",
+        "required": [
+          "handler_keys",
+          "concurrency_capacity"
+        ],
+        "properties": {
+          "concurrency_capacity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum concurrent work this session accepts; it must be positive.",
+            "minimum": 0
+          },
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional human-readable name shown to the owner; a supplied value is\nnon-blank and at most 128 bytes long."
+          },
+          "handler_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerHandlerKey"
+            },
+            "description": "Stable handler keys the runner can execute. The set must contain 1 to\n128 unique keys, each 1–128 bytes and matching\n`[A-Za-z0-9][A-Za-z0-9_.-]*`."
+          },
+          "protocol_version": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunnerProtocolVersion",
+                "description": "Typed version of Tron's runner protocol understood by this session."
+              }
+            ]
+          },
+          "runner_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional runner implementation version, retained as display metadata;\na supplied value is non-blank and at most 128 bytes long."
+          },
+          "sdk_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional semantic SDK version, used by the server to report whether\nthis session is older than a peer. A supplied value must parse as a\nsemantic version and be non-blank and at most 128 bytes long."
+          }
+        },
+        "additionalProperties": false
+      },
+      "RunnerCapabilities": {
+        "type": "object",
+        "description": "Owner-scoped readiness data for the handler picker. The server, not the\nUI, decides which live sessions are stale relative to their peers.",
+        "required": [
+          "compatibility_handler_key",
+          "handlers",
+          "sessions"
+        ],
+        "properties": {
+          "compatibility_handler_key": {
+            "$ref": "#/components/schemas/RunnerHandlerKey",
+            "description": "Compatibility handler assigned to pre-capability jobs. Every live\nsession remains capable of it for this release."
+          },
+          "handlers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HandlerCapability"
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerCapabilitySession"
+            }
+          }
+        }
+      },
+      "RunnerCapabilitySession": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "worker_api_key_id",
+          "handler_keys",
+          "out_of_date"
+        ],
+        "properties": {
+          "handler_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerHandlerKey"
+            }
+          },
+          "out_of_date": {
+            "type": "boolean",
+            "description": "True when this session is legacy, lacks a handler announced by a peer,\nor declares an older SDK/protocol version than a peer."
+          },
+          "protocol_version": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunnerProtocolVersion"
+              }
+            ]
+          },
+          "runner_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sdk_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "worker_api_key_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "RunnerHandlerKey": {
+        "type": "string",
+        "description": "Stable, validated name of a runner handler.  Handler keys are durable job\nconfiguration, rather than a free-form label inferred from live sessions."
+      },
+      "RunnerMessage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Must be the first frame on a new connection. Anything else, or no\nframe in time, is answered with `authentication_failed` and the\nconnection is closed.",
+            "required": [
+              "token",
+              "type"
+            ],
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "The worker API key token shown once when the key was created on\nthe Runners page."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authenticate"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Optional, at most once per connection, after `authenticated`: declares\nwhat this runner can do. Tron answers `announced`. Runners that never\nannounce are listed as legacy sessions and still receive work.",
+            "required": [
+              "announcement",
+              "type"
+            ],
+            "properties": {
+              "announcement": {
+                "$ref": "#/components/schemas/RunnerAnnouncement",
+                "description": "The capabilities of this connection."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "announce"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Takes on a delivery Tron pushed with `work`. Send it straight away,\nbefore the delivery's `accept_deadline`. Tron answers `accepted` or\n`accept_refused`.",
+            "required": [
+              "delivery_id",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The `delivery_id` from the `work` frame."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accept"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The one final result of an accepted delivery. It may be sent on any\nconnection authenticated with the same worker API key, for example a\nnew one after the runner restarted. Tron answers `report_recorded` or\n`report_rejected`.",
+            "required": [
+              "delivery_id",
+              "secret",
+              "outcome",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The `delivery_id` from the `work` frame."
+              },
+              "outcome": {
+                "$ref": "#/components/schemas/RunOutcome",
+                "description": "The job's result."
+              },
+              "secret": {
+                "type": "string",
+                "description": "The secret from the `accepted` frame for this delivery."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Frames a runner sends to Tron."
+      },
+      "RunnerProtocolVersion": {
+        "type": "string",
+        "description": "A version of the runner protocol defined by Tron.",
+        "enum": [
+          "v1"
+        ]
+      },
+      "RunnerTimingResponse": {
+        "type": "object",
+        "description": "Runner deliveries received by one worker API key for the completed runs.",
+        "required": [
+          "worker_api_key_id",
+          "runner_name",
+          "deliveries",
+          "metrics"
+        ],
+        "properties": {
+          "deliveries": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/TimingMetricsResponse"
+          },
+          "runner_name": {
+            "type": "string"
+          },
+          "worker_api_key_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ScheduleKind": {
+        "type": "string",
+        "enum": [
+          "cron",
+          "interval"
+        ]
+      },
+      "ScopeKey": {
+        "type": "object",
+        "description": "One customer scope as the admin reads key it: a personal owner's user\npublic id, or a shared organization's public id.",
+        "required": [
+          "owner_kind",
+          "owner_id"
+        ],
+        "properties": {
+          "owner_id": {
+            "type": "string"
+          },
+          "owner_kind": {
+            "$ref": "#/components/schemas/OwnerKind"
+          }
+        }
+      },
+      "ServerMessage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Answers a valid `authenticate`. Several runner processes may\nauthenticate with the same worker API key at once; each connection\ngets its own session.",
+            "required": [
+              "session_id",
+              "worker_api_key_id",
+              "type"
+            ],
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Names this one connection."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authenticated"
+                ]
+              },
+              "worker_api_key_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The worker API key the token belongs to."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Confirms that this connection's `announce` was retained.",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "announced"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The first frame was not a valid `authenticate` in time: a timeout, a\nmalformed or non-text frame, another frame type, or an unknown,\nrevoked or mismatched token. The connection is closed right after.",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authentication_failed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+            "required": [
+              "delivery_id",
+              "run_id",
+              "job_id",
+              "job_name",
+              "scheduled_for",
+              "accept_deadline",
+              "type"
+            ],
+            "properties": {
+              "accept_deadline": {
+                "type": "string",
+                "format": "date-time",
+                "description": "`accept` must arrive by this time. It is the push time plus the\njob's delivery timeout."
+              },
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Names this delivery; echo it in `accept` and `report`."
+              },
+              "job_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The job that was triggered."
+              },
+              "job_name": {
+                "type": "string",
+                "description": "The job's name, as the owner set it."
+              },
+              "run_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The run this delivery belongs to."
+              },
+              "scheduled_for": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the run was due."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "work"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a successful `accept`. Keep the secret: it is shown here\nonce and never again, and `report` must echo it.",
+            "required": [
+              "delivery_id",
+              "secret",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The accepted delivery."
+              },
+              "secret": {
+                "type": "string",
+                "description": "The one-time secret for this delivery's `report`."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accepted"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers an `accept` Tron would not take. Do not run the job.",
+            "required": [
+              "delivery_id",
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The refused delivery."
+              },
+              "reason": {
+                "$ref": "#/components/schemas/AcceptRefusal",
+                "description": "Why it was refused."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accept_refused"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a `report` Tron recorded. The delivery is finished.",
+            "required": [
+              "delivery_id",
+              "late",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The reported delivery."
+              },
+              "late": {
+                "type": "boolean",
+                "description": "True when the report arrived more than the job's lateness\nthreshold after the run's `scheduled_for`. A late report is\nstill recorded."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report_recorded"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a `report` Tron could not record.",
+            "required": [
+              "delivery_id",
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The delivery named in the report."
+              },
+              "reason": {
+                "$ref": "#/components/schemas/ReportRejection",
+                "description": "Why it was rejected."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report_rejected"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "An authenticated runner sent a frame the protocol does not allow. The\nconnection stays open.",
+            "required": [
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "reason": {
+                "$ref": "#/components/schemas/ProtocolViolation",
+                "description": "What was wrong."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "protocol_error"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Frames Tron sends to a runner."
+      },
+      "TargetKind": {
+        "type": "string",
+        "enum": [
+          "webhook",
+          "runner"
+        ]
+      },
+      "TimingBucket": {
+        "type": "string",
+        "description": "The width of one graph bucket, aligned to UTC.",
+        "enum": [
+          "hour",
+          "day",
+          "week"
+        ]
+      },
+      "TimingBucketResponse": {
+        "type": "object",
+        "description": "Completed runs of one bucket, by the instant each run finished.",
+        "required": [
+          "start",
+          "runs",
+          "metrics"
+        ],
+        "properties": {
+          "metrics": {
+            "$ref": "#/components/schemas/TimingMetricsResponse"
+          },
+          "runs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TimingMetricsResponse": {
+        "type": "object",
+        "description": "Execution and total durations over one set of runs or deliveries.",
+        "required": [
+          "execution",
+          "total"
+        ],
+        "properties": {
+          "execution": {
+            "$ref": "#/components/schemas/DurationSummaryResponse",
+            "description": "Acceptance (or webhook request start) until the report or response."
+          },
+          "total": {
+            "$ref": "#/components/schemas/DurationSummaryResponse",
+            "description": "Scheduled occurrence until the run or delivery finished."
+          }
+        }
+      },
+      "UsageBucket": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ]
+      },
+      "WebhookSigningPurpose": {
+        "type": "string",
+        "enum": [
+          "delivery_hmac_sha256"
+        ]
+      },
+      "WebhookSigningSecretResponse": {
+        "type": "object",
+        "description": "Redacted delivery-HMAC signing-secret version metadata. It never contains plaintext.",
+        "required": [
+          "id",
+          "purpose",
+          "version",
+          "valid_from",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/WebhookSigningPurpose"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WebhookSigningSecretStatus"
+          },
+          "valid_from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WebhookSigningSecretStatus": {
+        "type": "string",
+        "description": "Client-visible validity of a redacted webhook delivery signing-secret version.",
+        "enum": [
+          "future",
+          "active",
+          "expired"
+        ]
+      },
+      "WorkerApiKeyRequest": {
+        "type": "object",
+        "description": "Body of `POST /api/worker-api-keys`.",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "A label for the owner to recognise the worker by; not secret."
+          }
+        }
+      },
+      "WorkerApiKeyResponse": {
+        "type": "object",
+        "description": "Metadata identifying a worker API key. Contains no secret material: the\ntoken, its salt and its digest are never part of this shape.",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkerApiKeyStatus"
+          }
+        }
+      },
+      "WorkerApiKeyStatus": {
+        "type": "string",
+        "description": "Whether a worker API key can still authenticate a runner.",
+        "enum": [
+          "active",
+          "revoked"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "zitadel_bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "An access token issued by the Zitadel instance advertised at GET /api/config. Verified locally against the issuer's JWKS."
+      }
+    }
+  }
+}
