@@ -1,0 +1,742 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Tron runner protocol",
+    "version": "0.1.0",
+    "description": "How a runner talks to Tron over a WebSocket. This document is generated from the Rust frame types Tron itself serializes and parses, so it cannot describe a frame Tron does not speak.\n\nCompatibility and versions. A runner states the protocol it speaks in `announce.announcement.protocol_version`, a `RunnerProtocolVersion`. This document describes `v1`, the only version, and Tron decodes only the frames and fields defined here: an unknown frame `type`, a missing or extra field, or an unknown `protocol_version` is answered `protocol_error` with reason `malformed_message`. Runners that never announce are legacy sessions and stay compatible for this release. A change a `v1` runner could not handle (a renamed or removed frame, field or reason value, or a new required field) is published under a new `protocol_version`, not made to `v1`, and this document's `x-runner-protocol-version` names the version it describes.",
+    "x-runner-protocol-version": "v1"
+  },
+  "channels": {
+    "runners": {
+      "address": "/api/runners/ws",
+      "title": "Runner WebSocket",
+      "description": "Frames are JSON text frames, each an object whose `type` names the frame. A runner authenticates (see the `worker_api_key` scheme), may `announce` its handlers and capacity once, receives `work`, replies at once with `accept`, and finally sends one `report` carrying the one-time secret from `accepted`. A report may arrive on a different connection with the same worker API key than the one that accepted. Tron keeps a limited number of bytes of the report's result message (the Runners page states the limit): a longer message is cut at a character boundary and ends with the text \" [truncated by Tron]\", and the report is still recorded.\n\nDelivery modes decide how deliveries of one run relate. For `one_runner` jobs one delivery per run wins: simultaneous accepts race under the run lock, exactly one gets `accepted` and every other delivery's `accept` is answered `accept_refused` with reason `already_resolved`. For `every_connected`, `advanced_at_most` and `advanced_at_least` jobs several sessions receive a delivery; each delivery is accepted and reported independently, no accept is refused because another runner accepted, and the job's delivery mode decides how many successful outcomes make the run succeed.\n\nRefusals and rejections are closed sets: `accept_refused` carries an `AcceptRefusal`, `report_rejected` a `ReportRejection` and `protocol_error` a `ProtocolViolation`, each published with a description per value. Tron sends no free-text error.",
+      "messages": {
+        "accept": {
+          "name": "accept",
+          "title": "accept",
+          "description": "Takes on a delivery Tron pushed with `work`. Send it straight away,\nbefore the delivery's `accept_deadline`. Tron answers `accepted` or\n`accept_refused`.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/RunnerMessage/oneOf/2"
+          }
+        },
+        "accept_refused": {
+          "name": "accept_refused",
+          "title": "accept_refused",
+          "description": "Answers an `accept` Tron would not take. Do not run the job.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/5"
+          }
+        },
+        "accepted": {
+          "name": "accepted",
+          "title": "accepted",
+          "description": "Answers a successful `accept`. Keep the secret: it is shown here\nonce and never again, and `report` must echo it.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/4"
+          }
+        },
+        "announce": {
+          "name": "announce",
+          "title": "announce",
+          "description": "Optional, at most once per connection, after `authenticated`: declares\nwhat this runner can do. Tron answers `announced`. Runners that never\nannounce are listed as legacy sessions and still receive work.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/RunnerMessage/oneOf/1"
+          }
+        },
+        "announced": {
+          "name": "announced",
+          "title": "announced",
+          "description": "Confirms that this connection's `announce` was retained.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/1"
+          }
+        },
+        "authenticate": {
+          "name": "authenticate",
+          "title": "authenticate",
+          "description": "Must be the first frame on a new connection. Anything else, or no\nframe in time, is answered with `authentication_failed` and the\nconnection is closed.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/RunnerMessage/oneOf/0"
+          }
+        },
+        "authenticated": {
+          "name": "authenticated",
+          "title": "authenticated",
+          "description": "Answers a valid `authenticate`. Several runner processes may\nauthenticate with the same worker API key at once; each connection\ngets its own session.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/0"
+          }
+        },
+        "authentication_failed": {
+          "name": "authentication_failed",
+          "title": "authentication_failed",
+          "description": "The first frame was not a valid `authenticate` in time: a timeout, a\nmalformed or non-text frame, another frame type, or an unknown,\nrevoked or mismatched token. The connection is closed right after.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/2"
+          }
+        },
+        "protocol_error": {
+          "name": "protocol_error",
+          "title": "protocol_error",
+          "description": "An authenticated runner sent a frame the protocol does not allow. The\nconnection stays open.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/8"
+          }
+        },
+        "report": {
+          "name": "report",
+          "title": "report",
+          "description": "The one final result of an accepted delivery. It may be sent on any\nconnection authenticated with the same worker API key, for example a\nnew one after the runner restarted. Tron answers `report_recorded` or\n`report_rejected`.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/RunnerMessage/oneOf/3"
+          }
+        },
+        "report_recorded": {
+          "name": "report_recorded",
+          "title": "report_recorded",
+          "description": "Answers a `report` Tron recorded. The delivery is finished.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/6"
+          }
+        },
+        "report_rejected": {
+          "name": "report_rejected",
+          "title": "report_rejected",
+          "description": "Answers a `report` Tron could not record.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/7"
+          }
+        },
+        "work": {
+          "name": "work",
+          "title": "work",
+          "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+          "contentType": "application/json",
+          "payload": {
+            "$ref": "#/components/schemas/ServerMessage/oneOf/3"
+          }
+        }
+      },
+      "bindings": {
+        "ws": {
+          "method": "GET",
+          "bindingVersion": "0.1.0"
+        }
+      }
+    }
+  },
+  "operations": {
+    "receive_runner_frames": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/runners"
+      },
+      "title": "Frames a runner sends to Tron",
+      "description": "Every frame a runner may send, defined by `RunnerMessage`.",
+      "security": [
+        {
+          "$ref": "#/components/securitySchemes/worker_api_key"
+        }
+      ],
+      "messages": [
+        {
+          "$ref": "#/channels/runners/messages/authenticate"
+        },
+        {
+          "$ref": "#/channels/runners/messages/announce"
+        },
+        {
+          "$ref": "#/channels/runners/messages/accept"
+        },
+        {
+          "$ref": "#/channels/runners/messages/report"
+        }
+      ]
+    },
+    "send_server_frames": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/runners"
+      },
+      "title": "Frames Tron sends to a runner",
+      "description": "Every frame Tron may send, defined by `ServerMessage`.",
+      "security": [
+        {
+          "$ref": "#/components/securitySchemes/worker_api_key"
+        }
+      ],
+      "messages": [
+        {
+          "$ref": "#/channels/runners/messages/authenticated"
+        },
+        {
+          "$ref": "#/channels/runners/messages/announced"
+        },
+        {
+          "$ref": "#/channels/runners/messages/authentication_failed"
+        },
+        {
+          "$ref": "#/channels/runners/messages/work"
+        },
+        {
+          "$ref": "#/channels/runners/messages/accepted"
+        },
+        {
+          "$ref": "#/channels/runners/messages/accept_refused"
+        },
+        {
+          "$ref": "#/channels/runners/messages/report_recorded"
+        },
+        {
+          "$ref": "#/channels/runners/messages/report_rejected"
+        },
+        {
+          "$ref": "#/channels/runners/messages/protocol_error"
+        }
+      ]
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcceptRefusal": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "No delivery with this id was pushed to this connection's session under an unrevoked worker API key. Accept on the connection that received the `work`.",
+            "enum": [
+              "unknown_delivery"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The delivery's `accept_deadline` had passed, including when it had already been marked failed to deliver.",
+            "enum": [
+              "delivery_timed_out"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "This same delivery was already accepted (or is in flight) or reported, or its run was cancelled. A cancelled run's delivery stays `pushed`; the accept is refused because the run is cancelled. For `one_runner`, another delivery for this run already won the run-scoped accept race. Broadcast modes do not choose a winner.",
+            "enum": [
+              "already_resolved"
+            ]
+          }
+        ],
+        "description": "Why `accept` was refused."
+      },
+      "ProtocolViolation": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "A frame was not JSON for any runner frame (an unknown `type`, a missing or extra field, including a handler key that does not match the published handler-key schema), or was a binary frame.",
+            "enum": [
+              "malformed_message"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "Reserved; not sent today. A first frame other than `authenticate` is answered with `authentication_failed`.",
+            "enum": [
+              "not_authenticated"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "`authenticate` was sent again on an authenticated connection.",
+            "enum": [
+              "already_authenticated"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The announcement broke a constraint: zero capacity; no, too many, duplicate, blank or oversized handler keys; a blank or oversized display name or runner version; or a blank, oversized or non-semver SDK version.",
+            "enum": [
+              "invalid_announcement"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "`announce` was sent twice on one connection. Reconnect to replace the announcement.",
+            "enum": [
+              "already_announced"
+            ]
+          }
+        ],
+        "description": "How an authenticated runner broke the protocol."
+      },
+      "ReportRejection": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "No delivery with this id belongs to the reporting worker API key, or that key is revoked.",
+            "enum": [
+              "unknown_delivery"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The secret does not match the one issued in `accepted`, or the delivery was never accepted, so no secret was issued.",
+            "enum": [
+              "wrong_secret"
+            ]
+          },
+          {
+            "type": "string",
+            "description": "The secret matched, but the delivery already has its one final report.",
+            "enum": [
+              "not_in_flight"
+            ]
+          }
+        ],
+        "description": "Why `report` was rejected."
+      },
+      "RunOutcome": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ok"
+            ],
+            "properties": {
+              "ok": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "err"
+            ],
+            "properties": {
+              "err": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "The result a runner reports: exactly one of `ok` or `err`, each carrying\na single string, so it serializes as `{\"ok\": \"...\"}` or `{\"err\": \"...\"}`."
+      },
+      "RunnerAnnouncement": {
+        "type": "object",
+        "description": "What a runner declares about its connection in `announce`.",
+        "required": [
+          "handler_keys",
+          "concurrency_capacity"
+        ],
+        "properties": {
+          "concurrency_capacity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum concurrent work this session accepts; it must be positive.",
+            "minimum": 0
+          },
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional human-readable name shown to the owner; a supplied value is\nnon-blank and at most 128 bytes long."
+          },
+          "handler_keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerHandlerKey"
+            },
+            "description": "Stable handler keys the runner can execute. The set must contain 1 to\n128 unique keys, each 1–128 bytes and matching\n`[A-Za-z0-9][A-Za-z0-9_.-]*`."
+          },
+          "protocol_version": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunnerProtocolVersion",
+                "description": "Typed version of Tron's runner protocol understood by this session."
+              }
+            ]
+          },
+          "runner_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional runner implementation version, retained as display metadata;\na supplied value is non-blank and at most 128 bytes long."
+          },
+          "sdk_version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional semantic SDK version, used by the server to report whether\nthis session is older than a peer. A supplied value must parse as a\nsemantic version and be non-blank and at most 128 bytes long."
+          }
+        },
+        "additionalProperties": false
+      },
+      "RunnerHandlerKey": {
+        "type": "string",
+        "description": "Stable, validated name of a runner handler.  Handler keys are durable job\nconfiguration, rather than a free-form label inferred from live sessions."
+      },
+      "RunnerMessage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Must be the first frame on a new connection. Anything else, or no\nframe in time, is answered with `authentication_failed` and the\nconnection is closed.",
+            "required": [
+              "token",
+              "type"
+            ],
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "The worker API key token shown once when the key was created on\nthe Runners page."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authenticate"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Optional, at most once per connection, after `authenticated`: declares\nwhat this runner can do. Tron answers `announced`. Runners that never\nannounce are listed as legacy sessions and still receive work.",
+            "required": [
+              "announcement",
+              "type"
+            ],
+            "properties": {
+              "announcement": {
+                "$ref": "#/components/schemas/RunnerAnnouncement",
+                "description": "The capabilities of this connection."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "announce"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Takes on a delivery Tron pushed with `work`. Send it straight away,\nbefore the delivery's `accept_deadline`. Tron answers `accepted` or\n`accept_refused`.",
+            "required": [
+              "delivery_id",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The `delivery_id` from the `work` frame."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accept"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The one final result of an accepted delivery. It may be sent on any\nconnection authenticated with the same worker API key, for example a\nnew one after the runner restarted. Tron answers `report_recorded` or\n`report_rejected`.",
+            "required": [
+              "delivery_id",
+              "secret",
+              "outcome",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The `delivery_id` from the `work` frame."
+              },
+              "outcome": {
+                "$ref": "#/components/schemas/RunOutcome",
+                "description": "The job's result."
+              },
+              "secret": {
+                "type": "string",
+                "description": "The secret from the `accepted` frame for this delivery."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Frames a runner sends to Tron."
+      },
+      "RunnerProtocolVersion": {
+        "type": "string",
+        "description": "A version of the runner protocol defined by Tron.",
+        "enum": [
+          "v1"
+        ]
+      },
+      "ServerMessage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Answers a valid `authenticate`. Several runner processes may\nauthenticate with the same worker API key at once; each connection\ngets its own session.",
+            "required": [
+              "session_id",
+              "worker_api_key_id",
+              "type"
+            ],
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Names this one connection."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authenticated"
+                ]
+              },
+              "worker_api_key_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The worker API key the token belongs to."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Confirms that this connection's `announce` was retained.",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "announced"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The first frame was not a valid `authenticate` in time: a timeout, a\nmalformed or non-text frame, another frame type, or an unknown,\nrevoked or mismatched token. The connection is closed right after.",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "authentication_failed"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+            "required": [
+              "delivery_id",
+              "run_id",
+              "job_id",
+              "job_name",
+              "scheduled_for",
+              "accept_deadline",
+              "type"
+            ],
+            "properties": {
+              "accept_deadline": {
+                "type": "string",
+                "format": "date-time",
+                "description": "`accept` must arrive by this time. It is the push time plus the\njob's delivery timeout."
+              },
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Names this delivery; echo it in `accept` and `report`."
+              },
+              "job_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The job that was triggered."
+              },
+              "job_name": {
+                "type": "string",
+                "description": "The job's name, as the owner set it."
+              },
+              "run_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The run this delivery belongs to."
+              },
+              "scheduled_for": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the run was due."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "work"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a successful `accept`. Keep the secret: it is shown here\nonce and never again, and `report` must echo it.",
+            "required": [
+              "delivery_id",
+              "secret",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The accepted delivery."
+              },
+              "secret": {
+                "type": "string",
+                "description": "The one-time secret for this delivery's `report`."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accepted"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers an `accept` Tron would not take. Do not run the job.",
+            "required": [
+              "delivery_id",
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The refused delivery."
+              },
+              "reason": {
+                "$ref": "#/components/schemas/AcceptRefusal",
+                "description": "Why it was refused."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "accept_refused"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a `report` Tron recorded. The delivery is finished.",
+            "required": [
+              "delivery_id",
+              "late",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The reported delivery."
+              },
+              "late": {
+                "type": "boolean",
+                "description": "True when the report arrived more than the job's lateness\nthreshold after the run's `scheduled_for`. A late report is\nstill recorded."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report_recorded"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Answers a `report` Tron could not record.",
+            "required": [
+              "delivery_id",
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "delivery_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The delivery named in the report."
+              },
+              "reason": {
+                "$ref": "#/components/schemas/ReportRejection",
+                "description": "Why it was rejected."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "report_rejected"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "An authenticated runner sent a frame the protocol does not allow. The\nconnection stays open.",
+            "required": [
+              "reason",
+              "type"
+            ],
+            "properties": {
+              "reason": {
+                "$ref": "#/components/schemas/ProtocolViolation",
+                "description": "What was wrong."
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "protocol_error"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Frames Tron sends to a runner."
+      }
+    },
+    "securitySchemes": {
+      "worker_api_key": {
+        "type": "apiKey",
+        "in": "user",
+        "description": "The connection itself carries no credential: no `Authorization` header and no organization header. Authentication happens inside the protocol. The first frame a runner sends must be `authenticate` carrying a worker API key token, created on the Runners page and shown once. Tron answers `authenticated` (with a fresh session id) or `authentication_failed` and then closes the connection. A first frame that does not arrive within 10 seconds, or is not a valid `authenticate`, is answered with `authentication_failed`."
+      }
+    }
+  }
+}

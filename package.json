@@ -1,0 +1,30 @@
+{
+  "name": "tron-runner-sdk-workspace",
+  "private": true,
+  "type": "module",
+  "description": "Generation tooling, the SDK contract and the cross-language conformance suite for Tron's runner SDKs",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "generate": "node tools/generate.ts",
+    "check:generated": "node tools/generate.ts --check",
+    "check:protocol": "node tools/sync-protocol.ts --check",
+    "sync:protocol": "node tools/sync-protocol.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run check:generated && npm run typecheck",
+    "conformance": "node conformance/run.ts",
+    "check:bindings": "node tools/check-bindings.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "openapi-typescript": "7.13.0",
+    "quicktype-core": "23.2.6",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@types/ws": "^8.18.2",
+    "openapi-fetch": "0.15.0",
+    "ws": "^8.23.0"
+  }
+}

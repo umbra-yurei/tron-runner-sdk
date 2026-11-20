@@ -1,0 +1,44 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  generated:
+    name: Generated bindings are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18
+          cache: npm
+      - run: npm ci
+      # Re-generates every language's bindings in memory and fails if a committed file differs;
+      # then type-checks the generator, the conformance harness and the reference adapter.
+      - run: npm run check
+
+  bindings-compile:
+    name: Every language's bindings compile and round-trip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      # Builds a tiny consumer of each generated binding with that language's own toolchain, decodes
+      # sample messages and re-encodes them; --require-all makes a missing toolchain a failure.
+      - run: npm run check:bindings -- --require-all
