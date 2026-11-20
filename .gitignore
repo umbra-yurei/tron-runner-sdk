@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 /conformance/.run
 /.binding-checks
+/packages/dotnet/**/bin/
+/packages/dotnet/**/obj/
+/packages/dotnet/adapter/out/
+/packages/dotnet/pack/

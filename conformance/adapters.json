@@ -4,6 +4,11 @@
       "name": "reference-typescript",
       "command": ["node", "conformance/adapters/reference/adapter.ts"],
       "cwd": "."
+    },
+    {
+      "name": "dotnet",
+      "command": ["dotnet", "packages/dotnet/adapter/out/Cruma.Tron.Runner.ConformanceAdapter.dll"],
+      "cwd": "."
     }
   ]
 }
