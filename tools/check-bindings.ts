@@ -18,8 +18,6 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workRoot = join(repoRoot, ".binding-checks");
 const consumers = join(repoRoot, "tools/binding-checks");
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
-
 interface Check {
   language: string;
   /** Prints a version when the toolchain is installed. */
@@ -89,15 +87,24 @@ const checks: Check[] = [
   },
 ];
 
-/** The sample messages, built through the generated TypeScript types. */
-function writeSamples(dir: string): void {
-  const ids = {
-    delivery: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b01",
-    run: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
-    job: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
-  };
-  const samples: Record<string, string> = {
-    "WorkFrame.json": Convert.workFrameToJson({
+interface Sample {
+  file: string;
+  /** The sample's JSON, written by the generated TypeScript encoder. */
+  json: string;
+  /** Decodes with the generated TypeScript decoder and re-encodes, so two spellings of one message compare equal. */
+  normalise(json: string): string;
+}
+
+const ids = {
+  delivery: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b01",
+  run: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
+  job: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
+};
+
+const samples: Sample[] = [
+  {
+    file: "WorkFrame.json",
+    json: Convert.workFrameToJson({
       type: "work",
       delivery_id: ids.delivery,
       run_id: ids.run,
@@ -106,13 +113,30 @@ function writeSamples(dir: string): void {
       scheduled_for: "2026-01-02T03:04:05Z",
       accept_deadline: "2026-01-02T03:04:35Z",
     }),
-    "ReportFrame.ok.json": Convert.reportFrameToJson({ type: "report", delivery_id: ids.delivery, secret: "s3cret", outcome: { ok: "all good" } }),
-    "ReportFrame.err.json": Convert.reportFrameToJson({ type: "report", delivery_id: ids.delivery, secret: "s3cret", outcome: { err: "it broke" } }),
-    "AnnounceFrame.json": Convert.announceFrameToJson({
+    normalise: (json) => Convert.workFrameToJson(Convert.toWorkFrame(json)),
+  },
+  {
+    file: "ReportFrame.ok.json",
+    json: Convert.reportFrameToJson({ type: "report", delivery_id: ids.delivery, secret: "s3cret", outcome: { ok: "all good" } }),
+    normalise: (json) => Convert.reportFrameToJson(Convert.toReportFrame(json)),
+  },
+  {
+    file: "ReportFrame.err.json",
+    json: Convert.reportFrameToJson({ type: "report", delivery_id: ids.delivery, secret: "s3cret", outcome: { err: "it broke" } }),
+    normalise: (json) => Convert.reportFrameToJson(Convert.toReportFrame(json)),
+  },
+  {
+    // runner_version is left absent: an absent optional must stay absent, not become null.
+    file: "AnnounceFrame.json",
+    json: Convert.announceFrameToJson({
       type: "announce",
       announcement: { concurrency_capacity: 2, handler_keys: ["backup", "report.v2"], protocol_version: "v1", display_name: "worker-1", sdk_version: "1.2.3" },
     }),
-    "StartCommand.json": Convert.startCommandToJson({
+    normalise: (json) => Convert.announceFrameToJson(Convert.toAnnounceFrame(json)),
+  },
+  {
+    file: "StartCommand.json",
+    json: Convert.startCommandToJson({
       type: "start",
       tron_url: "ws://127.0.0.1:8090/api/runners/ws",
       token: "t",
@@ -120,20 +144,9 @@ function writeSamples(dir: string): void {
       handlers: [{ handler_key: "backup", outcome: "reply_ok", message: "done", delay_ms: 5 }],
       secret_store: { kind: "file", directory: "/tmp/secrets" },
     }),
-  };
-  for (const [file, json] of Object.entries(samples)) writeFileSync(join(dir, file), json);
-}
-
-function canonical(value: JsonValue): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value !== null && typeof value === "object") {
-    return `{${Object.keys(value)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonical(value[key] as JsonValue)}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
+    normalise: (json) => Convert.startCommandToJson(Convert.toStartCommand(json)),
+  },
+];
 
 function run(command: [string, ...string[]], env: Record<string, string> | undefined, cwd?: string): { ok: boolean; output: string } {
   const [program, ...args] = command;
@@ -163,7 +176,7 @@ for (const check of checks.filter((candidate) => !only || candidate.language ===
   const output = join(dir, "out");
   mkdirSync(input, { recursive: true });
   mkdirSync(output, { recursive: true });
-  writeSamples(input);
+  for (const sample of samples) writeFileSync(join(input, sample.file), sample.json);
   const command = check.prepare(dir, generatedDir(check.language));
   const result = run([...command, input, output], check.env);
   if (!result.ok) {
@@ -172,16 +185,20 @@ for (const check of checks.filter((candidate) => !only || candidate.language ===
     continue;
   }
   const mismatches: string[] = [];
-  for (const file of readdirSync(input)) {
-    const expected = canonical(JSON.parse(readFileSync(join(input, file), "utf8")) as JsonValue);
-    const actual = canonical(JSON.parse(readFileSync(join(output, file), "utf8")) as JsonValue);
-    if (expected !== actual) mismatches.push(`${file}\n  in:  ${expected}\n  out: ${actual}`);
+  for (const sample of samples) {
+    const expected = sample.normalise(sample.json);
+    try {
+      const actual = sample.normalise(readFileSync(join(output, sample.file), "utf8"));
+      if (expected !== actual) mismatches.push(`${sample.file}\n  in:  ${expected}\n  out: ${actual}`);
+    } catch (error) {
+      mismatches.push(`${sample.file}: output rejected by the generated TypeScript decoder: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   if (mismatches.length > 0) {
     failures += 1;
     console.log(`FAIL ${check.language}: re-encoded samples differ\n${mismatches.join("\n")}`);
   } else {
-    console.log(`ok   ${check.language}: ${probe.output.trim().split("\n")[0]} compiled the bindings and round-tripped ${readdirSync(input).length} samples`);
+    console.log(`ok   ${check.language}: ${probe.output.trim().split("\n")[0]} compiled the bindings and round-tripped ${samples.length} samples`);
   }
 }
 process.exit(failures === 0 ? 0 : 1);
