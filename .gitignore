@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 /conformance/.run
 /.binding-checks
+/packages/python/.venv
+/packages/python/dist
+*.egg-info

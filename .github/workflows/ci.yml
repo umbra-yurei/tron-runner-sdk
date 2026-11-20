@@ -42,3 +42,22 @@ jobs:
       # Builds a tiny consumer of each generated binding with that language's own toolchain, decodes
       # sample messages and re-encodes them; --require-all makes a missing toolchain a failure.
       - run: npm run check:bindings -- --require-all
+
+  python-sdk:
+    name: Python SDK type-checks, passes its tests and builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e "packages/python[dev]"
+      # Strict types over the SDK and its tests, then unit tests against a scripted Tron channel built from
+      # the generated frames. Importing the SDK fails if the protocol gained a frame it does not decode, and a
+      # test pins its supported protocol version to protocol/asyncapi.json.
+      - run: mypy
+        working-directory: packages/python
+      - run: pytest
+        working-directory: packages/python
+      - run: python -m build
+        working-directory: packages/python
