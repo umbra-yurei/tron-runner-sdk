@@ -3507,7 +3507,8 @@
           "runner_socket_path",
           "runner_authentication_timeout_seconds",
           "miss_grace_window",
-          "compatibility_handler_key"
+          "compatibility_handler_key",
+          "runner_result_message_limit_bytes"
         ],
         "properties": {
           "client_id": {
@@ -3538,6 +3539,12 @@
             "type": "integer",
             "format": "int32",
             "description": "Seconds a runner has, after opening the WebSocket, to send its\n`authenticate` frame before the server answers\n`authentication_failed` and closes the connection —\n[`crate::runner_socket::AUTHENTICATION_TIMEOUT_SECONDS`].",
+            "minimum": 0
+          },
+          "runner_result_message_limit_bytes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Bytes of a runner's `report` result message that are kept; a longer\nmessage is cut and marked, never rejected —\n[`RetentionSettings::max_result_message_bytes`].",
             "minimum": 0
           },
           "runner_socket_path": {

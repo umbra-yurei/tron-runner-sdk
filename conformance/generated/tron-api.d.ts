@@ -926,6 +926,13 @@ export interface components {
              */
             runner_authentication_timeout_seconds: number;
             /**
+             * Format: int32
+             * @description Bytes of a runner's `report` result message that are kept; a longer
+             *     message is cut and marked, never rejected —
+             *     [`RetentionSettings::max_result_message_bytes`].
+             */
+            runner_result_message_limit_bytes: number;
+            /**
              * @description The path, on the API's own origin, where runners open their
              *     WebSocket — [`crate::runner_socket::path`]. That route is not an
              *     OpenAPI operation (it is a protocol, not a request/response), so it is
