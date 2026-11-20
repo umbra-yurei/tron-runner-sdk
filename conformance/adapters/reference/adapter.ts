@@ -84,7 +84,8 @@ class Runner {
   private connectedOnce = false;
   private stopping = false;
   private backoff = BACKOFF_INITIAL_MS;
-  private inFlight = 0;
+  // Deliveries awaiting Tron's final answer: from `work` (or a `report_pending`) until accept_refused, report_recorded or report_rejected.
+  private readonly unanswered = new Set<string>();
   private readonly store: SecretStore;
   private onDrained: (() => void) | undefined;
   private onFirstOutcome: ((outcome: "connected" | "authentication_failed" | "announcement_rejected" | "unreachable") => void) | undefined;
@@ -140,10 +141,7 @@ class Runner {
   }
 
   private onFrame(text: string): void {
-    const tag: unknown = JSON.parse(text);
-    const kind = (typeof tag === "object" && tag !== null && "type" in tag ? tag.type : undefined) as ServerFrameKind;
-    if (!Object.hasOwn(serverDecoders, kind)) throw new Error(`unknown server frame: ${text}`);
-    const frame: Frame = serverDecoders[kind](text);
+    const frame: Frame = serverDecoders[Convert.toServerFrameTag(text).type](text);
     switch (frame.type) {
       case "authenticated":
         this.sessionId = frame.session_id;
@@ -170,7 +168,7 @@ class Runner {
         }
         break;
       case "work":
-        this.inFlight += 1;
+        this.unanswered.add(frame.delivery_id);
         this.send(Convert.acceptFrameToJson({ type: "accept", delivery_id: frame.delivery_id }));
         this.pendingWork.set(frame.delivery_id, { runId: frame.run_id, jobId: frame.job_id, jobName: frame.job_name });
         break;
@@ -179,15 +177,17 @@ class Runner {
         break;
       case "accept_refused":
         this.pendingWork.delete(frame.delivery_id);
-        this.finishOne();
         emit({ type: "accept_refused", delivery_id: frame.delivery_id, reason: frame.reason });
+        this.answered(frame.delivery_id);
         break;
       case "report_recorded":
         this.store.remove(frame.delivery_id);
         emit({ type: "report_recorded", delivery_id: frame.delivery_id, late: frame.late });
+        this.answered(frame.delivery_id);
         break;
       case "report_rejected":
         emit({ type: "report_rejected", delivery_id: frame.delivery_id, reason: frame.reason });
+        this.answered(frame.delivery_id);
         break;
     }
   }
@@ -231,8 +231,8 @@ class Runner {
         this.report(frame.delivery_id, outcomeOf(handler));
       } catch (error) {
         fail(error);
+        this.answered(frame.delivery_id);
       }
-      this.finishOne();
     }, handler.delay_ms);
   }
 
@@ -246,6 +246,7 @@ class Runner {
   report(deliveryId: string, outcome: RunOutcome): void {
     const secret = this.store.load(deliveryId);
     if (secret === undefined) throw new Error(`no stored secret for delivery ${deliveryId}`);
+    this.unanswered.add(deliveryId);
     this.send(Convert.reportFrameToJson({ type: "report", delivery_id: deliveryId, secret, outcome }));
   }
 
@@ -253,16 +254,14 @@ class Runner {
     return this.store.pending();
   }
 
-  private finishOne(): void {
-    this.inFlight -= 1;
-    if (this.inFlight === 0) this.onDrained?.();
+  private answered(deliveryId: string): void {
+    this.unanswered.delete(deliveryId);
+    if (this.unanswered.size === 0) this.onDrained?.();
   }
 
   async drainAndClose(): Promise<void> {
     this.stopping = true;
-    if (this.inFlight > 0) await new Promise<void>((resolve) => (this.onDrained = resolve));
-    // Give Tron a moment to answer the last report before the socket goes away.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (this.unanswered.size > 0) await new Promise<void>((resolve) => (this.onDrained = resolve));
     this.socket?.close();
   }
 

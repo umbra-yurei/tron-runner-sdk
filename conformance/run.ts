@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AdapterSpec } from "./adapter-process.ts";
+import { Convert } from "../packages/typescript/src/generated/protocol.ts";
 import { ScenarioContext } from "./context.ts";
 import { scenarios } from "./scenarios.ts";
 import { attachOrStart } from "./stack.ts";
@@ -20,22 +21,8 @@ function argument(name: string): string | undefined {
   return index === -1 ? undefined : process.argv[index + 1];
 }
 
-function isAdapterSpec(value: unknown): value is AdapterSpec {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Partial<Record<keyof AdapterSpec, unknown>>;
-  return (
-    typeof candidate.name === "string" &&
-    typeof candidate.cwd === "string" &&
-    Array.isArray(candidate.command) &&
-    candidate.command.length > 0 &&
-    candidate.command.every((part) => typeof part === "string")
-  );
-}
-
 function loadAdapters(): AdapterSpec[] {
-  const parsed: unknown = JSON.parse(readFileSync(resolve(repoRoot, "conformance/adapters.json"), "utf8"));
-  if (!Array.isArray(parsed) || !parsed.every(isAdapterSpec)) throw new Error("conformance/adapters.json is malformed");
-  return parsed;
+  return Convert.toAdapterRegistry(readFileSync(resolve(repoRoot, "conformance/adapters.json"), "utf8")).adapters;
 }
 
 async function withTimeout(work: Promise<void>, label: string): Promise<void> {

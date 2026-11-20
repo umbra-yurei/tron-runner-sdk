@@ -83,6 +83,15 @@ namespace Tron.RunnerSdk.Generated
     }
 
     /// <summary>
+    /// Just the `type` tag of a command line. Decode this first, then the command it names.
+    /// </summary>
+    public partial class AdapterCommandTag
+    {
+        [JsonPropertyName("type")]
+        public AdapterCommandKindEnum Type { get; set; }
+    }
+
+    /// <summary>
     /// A failure outside the typed paths above. Any `error` fails the scenario.
     /// </summary>
     public partial class AdapterErrorEvent
@@ -92,6 +101,48 @@ namespace Tron.RunnerSdk.Generated
 
         [JsonPropertyName("type")]
         public AdapterErrorEventType Type { get; set; }
+    }
+
+    /// <summary>
+    /// Just the `type` tag of an event line. Decode this first, then the event it names.
+    /// </summary>
+    public partial class AdapterEventTag
+    {
+        [JsonPropertyName("type")]
+        public AdapterEventKindEnum Type { get; set; }
+    }
+
+    /// <summary>
+    /// The contents of conformance/adapters.json.
+    /// </summary>
+    public partial class AdapterRegistry
+    {
+        [JsonPropertyName("adapters")]
+        public List<AdapterRegistration> Adapters { get; set; }
+    }
+
+    /// <summary>
+    /// One SDK adapter the conformance runner can drive.
+    /// </summary>
+    public partial class AdapterRegistration
+    {
+        /// <summary>
+        /// Program and arguments, run from `cwd`.
+        /// </summary>
+        [JsonPropertyName("command")]
+        public List<string> Command { get; set; }
+
+        /// <summary>
+        /// Working directory, relative to the repository root.
+        /// </summary>
+        [JsonPropertyName("cwd")]
+        public string Cwd { get; set; }
+
+        /// <summary>
+        /// Name used by `--adapter` and in the report.
+        /// </summary>
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
     }
 
     /// <summary>
@@ -454,6 +505,24 @@ namespace Tron.RunnerSdk.Generated
     }
 
     /// <summary>
+    /// Just the `type` tag of a frame. Decode this first, then the frame it names.
+    /// </summary>
+    public partial class RunnerFrameTag
+    {
+        [JsonPropertyName("type")]
+        public RunnerFrameKindEnum Type { get; set; }
+    }
+
+    /// <summary>
+    /// Just the `type` tag of a frame. Decode this first, then the frame it names.
+    /// </summary>
+    public partial class ServerFrameTag
+    {
+        [JsonPropertyName("type")]
+        public ServerFrameKindEnum Type { get; set; }
+    }
+
+    /// <summary>
     /// Connect, authenticate and announce, then deliver work to the scripted handlers. Answered
     /// by `connected` or `connect_failed`.
     /// </summary>
@@ -753,6 +822,11 @@ namespace Tron.RunnerSdk.Generated
         public static AdapterCommandKindEnum FromJson(string json) => JsonSerializer.Deserialize<AdapterCommandKindEnum>(json, Tron.RunnerSdk.Generated.Converter.Settings);
     }
 
+    public partial class AdapterCommandTag
+    {
+        public static AdapterCommandTag FromJson(string json) => JsonSerializer.Deserialize<AdapterCommandTag>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
     public partial class AdapterErrorEvent
     {
         public static AdapterErrorEvent FromJson(string json) => JsonSerializer.Deserialize<AdapterErrorEvent>(json, Tron.RunnerSdk.Generated.Converter.Settings);
@@ -761,6 +835,21 @@ namespace Tron.RunnerSdk.Generated
     public class AdapterEventKind
     {
         public static AdapterEventKindEnum FromJson(string json) => JsonSerializer.Deserialize<AdapterEventKindEnum>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
+    public partial class AdapterEventTag
+    {
+        public static AdapterEventTag FromJson(string json) => JsonSerializer.Deserialize<AdapterEventTag>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
+    public partial class AdapterRegistration
+    {
+        public static AdapterRegistration FromJson(string json) => JsonSerializer.Deserialize<AdapterRegistration>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
+    public partial class AdapterRegistry
+    {
+        public static AdapterRegistry FromJson(string json) => JsonSerializer.Deserialize<AdapterRegistry>(json, Tron.RunnerSdk.Generated.Converter.Settings);
     }
 
     public partial class AnnounceFrame
@@ -898,6 +987,11 @@ namespace Tron.RunnerSdk.Generated
         public static RunnerFrameKindEnum FromJson(string json) => JsonSerializer.Deserialize<RunnerFrameKindEnum>(json, Tron.RunnerSdk.Generated.Converter.Settings);
     }
 
+    public partial class RunnerFrameTag
+    {
+        public static RunnerFrameTag FromJson(string json) => JsonSerializer.Deserialize<RunnerFrameTag>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
     public class RunnerHandlerKey
     {
         public static string FromJson(string json) => JsonSerializer.Deserialize<string>(json, Tron.RunnerSdk.Generated.Converter.Settings);
@@ -921,6 +1015,11 @@ namespace Tron.RunnerSdk.Generated
     public class ServerFrameKind
     {
         public static ServerFrameKindEnum FromJson(string json) => JsonSerializer.Deserialize<ServerFrameKindEnum>(json, Tron.RunnerSdk.Generated.Converter.Settings);
+    }
+
+    public partial class ServerFrameTag
+    {
+        public static ServerFrameTag FromJson(string json) => JsonSerializer.Deserialize<ServerFrameTag>(json, Tron.RunnerSdk.Generated.Converter.Settings);
     }
 
     public partial class StartCommand
@@ -951,8 +1050,12 @@ namespace Tron.RunnerSdk.Generated
         public static string ToJson(this AcceptRefusedFrame self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AcceptedFrame self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AdapterCommandKindEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this AdapterCommandTag self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AdapterErrorEvent self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AdapterEventKindEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this AdapterEventTag self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this AdapterRegistration self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this AdapterRegistry self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AnnounceFrame self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AnnouncedFrame self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this AuthenticateFrame self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
@@ -980,11 +1083,13 @@ namespace Tron.RunnerSdk.Generated
         public static string ToJson(this RunOutcome self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this RunnerAnnouncement self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this RunnerFrameKindEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this RunnerFrameTag self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this string self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this RunnerProtocolVersionEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this SecretStoreConfig self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this SecretStoreKindEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this ServerFrameKindEnum self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
+        public static string ToJson(this ServerFrameTag self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this StartCommand self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this StopCommand self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
         public static string ToJson(this StoppedEvent self) => JsonSerializer.Serialize(self, Tron.RunnerSdk.Generated.Converter.Settings);
@@ -995,6 +1100,7 @@ namespace Tron.RunnerSdk.Generated
     {
         public static readonly JsonSerializerOptions Settings = new(JsonSerializerDefaults.General)
         {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Converters =
             {
                 AcceptFrameTypeConverter.Singleton,

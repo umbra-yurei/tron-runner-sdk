@@ -23,7 +23,7 @@ the first start compiles Tron. Tron's server log goes to `conformance/.run/tron.
 
 authentication and announce; typed failure for a bad token and an unreachable Tron; reconnect after a dropped
 connection; handler-filtered delivery; accept + `Ok`; accept + `Err`; restart between accept and report;
-`wrong_secret`, `not_in_flight` and `delivery_timed_out` rejections; graceful drain. Capacity cases are added after
+`wrong_secret`, `not_in_flight` and `delivery_timed_out` rejections; graceful drain (in-flight work finishes and its report acknowledgement arrives, with the proxy holding the acknowledgement, before `stopped`). Capacity cases are added after
 Tron's capacity-aware dispatch (board task `e58057dd`) lands.
 
 Not covered black-box: `unknown_delivery` (either direction) and `already_resolved`, which an SDK cannot provoke
@@ -45,7 +45,10 @@ Contract for each message is in the schema's descriptions. In short:
 3. Write `handler_invoked`, `delivery_accepted`, `report_recorded`, `accept_refused` and `report_rejected` as the SDK
    goes. An `error` event means the SDK failed outside the typed paths and fails the scenario.
 4. `list_pending` -> `pending`; `report_pending` reports an earlier accepted delivery from the secret store.
-5. `stop` drains, writes `stopped` and exits 0.
+5. `stop` drains — every accepted delivery's report is acknowledged or rejected by Tron before `stopped` — then exits 0.
+
+Incoming frames and commands are decoded with a generated tag probe (`Convert.toServerFrameTag`, `toAdapterCommandTag`)
+that reads only `type`, then dispatched to the generated decoder for that kind; there are no hand-written shapes.
 
 Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root). The
 reference adapter in `adapters/reference/` implements all of this on Node's WebSocket and is what keeps the harness

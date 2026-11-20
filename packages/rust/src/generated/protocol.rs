@@ -95,6 +95,13 @@ pub enum AcceptedFrameType {
     Accepted,
 }
 
+/// Just the `type` tag of a command line. Decode this first, then the command it names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdapterCommandTag {
+    #[serde(rename = "type")]
+    pub adapter_command_tag_type: AdapterCommandKind,
+}
+
 /// The `type` tag of every command the harness sends to an adapter, one JSON object per line
 /// on the adapter's standard input.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -124,6 +131,13 @@ pub struct AdapterErrorEvent {
 #[serde(rename_all = "snake_case")]
 pub enum AdapterErrorEventType {
     Error,
+}
+
+/// Just the `type` tag of an event line. Decode this first, then the event it names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdapterEventTag {
+    #[serde(rename = "type")]
+    pub adapter_event_tag_type: AdapterEventKind,
 }
 
 /// The `type` tag of every event an adapter writes, one JSON object per line on its standard
@@ -158,6 +172,25 @@ pub enum AdapterEventKind {
     ReportRejected,
 
     Stopped,
+}
+
+/// The contents of conformance/adapters.json.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdapterRegistry {
+    pub adapters: Vec<AdapterRegistration>,
+}
+
+/// One SDK adapter the conformance runner can drive.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdapterRegistration {
+    /// Program and arguments, run from `cwd`.
+    pub command: Vec<String>,
+
+    /// Working directory, relative to the repository root.
+    pub cwd: String,
+
+    /// Name used by `--adapter` and in the report.
+    pub name: String,
 }
 
 /// Optional, at most once per connection, after `authenticated`: declares
@@ -603,6 +636,13 @@ pub struct ReportRejectedFrame {
     pub report_rejected_frame_type: ReportRejectedEventType,
 }
 
+/// Just the `type` tag of a frame. Decode this first, then the frame it names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RunnerFrameTag {
+    #[serde(rename = "type")]
+    pub runner_frame_tag_type: RunnerFrameKind,
+}
+
 /// The `type` tag of every frame a runner sends.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -614,6 +654,13 @@ pub enum RunnerFrameKind {
     Authenticate,
 
     Report,
+}
+
+/// Just the `type` tag of a frame. Decode this first, then the frame it names.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ServerFrameTag {
+    #[serde(rename = "type")]
+    pub server_frame_tag_type: ServerFrameKind,
 }
 
 /// The `type` tag of every frame Tron sends. Decode this first, then the frame it names.

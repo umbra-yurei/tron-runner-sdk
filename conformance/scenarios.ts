@@ -14,7 +14,8 @@ const RUN_TIMEOUT_MS = 30_000;
 const DELIVERY_TIMEOUT_SHORT_SECONDS = 1;
 const ACCEPT_HELD_MS = 2_500;
 const NEVER_FINISHES_MS = 600_000;
-const DRAIN_HANDLER_MS = 1_000;
+const DRAIN_HANDLER_MS = 300;
+const ACK_HELD_MS = 1_500;
 const UNREACHABLE_URL = "ws://127.0.0.1:1/";
 
 function check(condition: boolean, message: string): void {
@@ -196,19 +197,27 @@ export const scenarios: Scenario[] = [
     },
   },
   {
-    name: "drains in-flight work on stop, then exits",
+    name: "drains in-flight work and its report acknowledgement on stop, then exits",
     async run(context) {
       const user = context.newUser();
+      const token = await user.createWorkerKey("drain");
+      // Tron's answer to the report is held back, so `stopped` before it would be a premature exit.
+      const proxy = await context.proxy({ holdServerFrame: (kind) => (kind === "report_recorded" ? ACK_HELD_MS : 0) });
       const adapter = await context.connect({
-        token: await user.createWorkerKey("drain"),
+        token,
+        tronUrl: proxy.url,
         handlers: [handler("drain-handler", "reply_ok", "drained", DRAIN_HANDLER_MS)],
       });
       const jobId = await user.createRunnerJob({ name: "drain", handlerKey: "drain-handler" });
       const run = await user.triggerRun(jobId);
       await adapter.expect("handler_invoked", (event) => event.run_id === run.id);
-      const stopping = adapter.stop();
-      await adapter.expect("report_recorded");
-      await stopping;
+      const stopRequestedAt = Date.now();
+      await adapter.stop();
+      const stoppedAfterMs = Date.now() - stopRequestedAt;
+      const recorded = adapter.events.findIndex((event) => event.type === "report_recorded");
+      const stopped = adapter.events.findIndex((event) => event.type === "stopped");
+      check(recorded !== -1 && recorded < stopped, "`stopped` must follow the report acknowledgement");
+      check(stoppedAfterMs >= ACK_HELD_MS, `stop returned after ${stoppedAfterMs}ms, before the held acknowledgement (${ACK_HELD_MS}ms)`);
       await user.waitForRun(jobId, run.id, ["succeeded"], RUN_TIMEOUT_MS);
     },
   },

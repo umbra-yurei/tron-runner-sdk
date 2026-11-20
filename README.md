@@ -18,11 +18,12 @@ npm ci
 npm run generate          # rewrite every package's bindings from protocol/asyncapi.json
 npm run check             # CI: fail on stale generated output, then type-check tooling and harness
 npm run sync:protocol     # refresh protocol/ from a Tron checkout (TRON_DIR=../tron) or a running one (TRON_URL=...)
+npm run check:bindings    # build each language's generated bindings with its own toolchain and round-trip sample messages
 npm run check:protocol    # fail if protocol/ has drifted from Tron
 npm run conformance       # run every adapter against a real Tron; see conformance/README.md
 ```
 
-`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs only `check`.
+`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs only `check` and `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped).
 
 ## Updating the protocol
 

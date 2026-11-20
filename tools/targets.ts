@@ -72,6 +72,12 @@ export const targets: Target[] = [
     bindingsFile: "Protocol.cs",
     versionFile: "ProtocolVersion.cs",
     comment: "//",
+    // Same wire rule as Rust: an absent optional is omitted, never written as null.
+    postProcess: (source) =>
+      source.replace(
+        "new(JsonSerializerDefaults.General)\n        {\n",
+        "new(JsonSerializerDefaults.General)\n        {\n            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,\n",
+      ),
     versionSource: ({ protocol, document, channel }) =>
       `namespace Tron.RunnerSdk.Generated\n{\n    public static class ProtocolVersion\n    {\n        /// <summary>The runner protocol version this package speaks.</summary>\n        public const string Current = ${JSON.stringify(protocol)};\n\n        /// <summary>The version of the AsyncAPI document the bindings were generated from.</summary>\n        public const string DocumentVersion = ${JSON.stringify(document)};\n\n        /// <summary>The path of the runner WebSocket, relative to Tron's base URL.</summary>\n        public const string ChannelAddress = ${JSON.stringify(channel)};\n    }\n}\n`,
   },
@@ -83,6 +89,8 @@ export const targets: Target[] = [
     bindingsFile: "protocol.go",
     versionFile: "protocol_version.go",
     comment: "//",
+    // Same wire rule as Rust: an absent optional (a pointer field) is omitted, never written as null.
+    postProcess: (source) => source.replace(/^(\s+\w+\s+\*[\w.]+\s+`json:"\w+)"`/gm, '$1,omitempty"`'),
     versionSource: ({ protocol, document, channel }) =>
       `package generated\n\n// ProtocolVersion is the runner protocol version this package speaks.\nconst ProtocolVersion = ${JSON.stringify(protocol)}\n\n// ProtocolDocumentVersion is the AsyncAPI document version the bindings were generated from.\nconst ProtocolDocumentVersion = ${JSON.stringify(document)}\n\n// RunnerChannelAddress is the path of the runner WebSocket, relative to Tron's base URL.\nconst RunnerChannelAddress = ${JSON.stringify(channel)}\n`,
   },

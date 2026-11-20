@@ -161,6 +161,16 @@ export function buildBundle(asyncapiPath: string, adapterSchemaPath: string): Bu
           : "The `type` tag of every frame a runner sends.",
     };
     topLevel.push(direction.kindDefinition);
+    // A generated probe for the tag alone, so a receiver picks the frame decoder from a typed value.
+    const tagName = direction.kindDefinition.replace(/Kind$/, "Tag");
+    definitions[tagName] = {
+      type: "object",
+      description: `Just the \`type\` tag of a frame. Decode this first, then the frame it names.`,
+      properties: { type: { $ref: DEFINITION_PREFIX + direction.kindDefinition } },
+      required: ["type"],
+      additionalProperties: true,
+    };
+    topLevel.push(tagName);
   }
 
   const adapter = JSON.parse(readFileSync(adapterSchemaPath, "utf8")) as Schema;

@@ -65,6 +65,16 @@ func (r *AdapterCommandKind) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
+func UnmarshalAdapterCommandTag(data []byte) (AdapterCommandTag, error) {
+	var r AdapterCommandTag
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *AdapterCommandTag) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
 func UnmarshalAdapterErrorEvent(data []byte) (AdapterErrorEvent, error) {
 	var r AdapterErrorEvent
 	err := json.Unmarshal(data, &r)
@@ -82,6 +92,36 @@ func UnmarshalAdapterEventKind(data []byte) (AdapterEventKind, error) {
 }
 
 func (r *AdapterEventKind) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+func UnmarshalAdapterEventTag(data []byte) (AdapterEventTag, error) {
+	var r AdapterEventTag
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *AdapterEventTag) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+func UnmarshalAdapterRegistration(data []byte) (AdapterRegistration, error) {
+	var r AdapterRegistration
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *AdapterRegistration) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+func UnmarshalAdapterRegistry(data []byte) (AdapterRegistry, error) {
+	var r AdapterRegistry
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *AdapterRegistry) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
@@ -355,6 +395,16 @@ func (r *RunnerFrameKind) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
+func UnmarshalRunnerFrameTag(data []byte) (RunnerFrameTag, error) {
+	var r RunnerFrameTag
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *RunnerFrameTag) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
 type RunnerHandlerKey string
 
 func UnmarshalRunnerHandlerKey(data []byte) (RunnerHandlerKey, error) {
@@ -404,6 +454,16 @@ func UnmarshalServerFrameKind(data []byte) (ServerFrameKind, error) {
 }
 
 func (r *ServerFrameKind) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+func UnmarshalServerFrameTag(data []byte) (ServerFrameTag, error) {
+	var r ServerFrameTag
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *ServerFrameTag) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
@@ -481,10 +541,35 @@ type AcceptedFrame struct {
 	Type                                                AcceptedFrameType `json:"type"`
 }
 
+// Just the `type` tag of a command line. Decode this first, then the command it names.
+type AdapterCommandTag struct {
+	Type AdapterCommandKind `json:"type"`
+}
+
 // A failure outside the typed paths above. Any `error` fails the scenario.
 type AdapterErrorEvent struct {
 	Message string                `json:"message"`
 	Type    AdapterErrorEventType `json:"type"`
+}
+
+// Just the `type` tag of an event line. Decode this first, then the event it names.
+type AdapterEventTag struct {
+	Type AdapterEventKind `json:"type"`
+}
+
+// The contents of conformance/adapters.json.
+type AdapterRegistry struct {
+	Adapters []AdapterRegistration `json:"adapters"`
+}
+
+// One SDK adapter the conformance runner can drive.
+type AdapterRegistration struct {
+	// Program and arguments, run from `cwd`.                      
+	Command                                               []string `json:"command"`
+	// Working directory, relative to the repository root.         
+	Cwd                                                   string   `json:"cwd"`
+	// Name used by `--adapter` and in the report.                 
+	Name                                                  string   `json:"name"`
 }
 
 // Optional, at most once per connection, after `authenticated`: declares
@@ -501,19 +586,19 @@ type RunnerAnnouncement struct {
 	ConcurrencyCapacity                                                     int64                  `json:"concurrency_capacity"`
 	// Optional human-readable name shown to the owner; a supplied value is                        
 	// non-blank and at most 128 bytes long.                                                       
-	DisplayName                                                             *string                `json:"display_name"`
+	DisplayName                                                             *string                `json:"display_name,omitempty"`
 	// Stable handler keys the runner can execute. The set must contain 1 to                       
 	// 128 unique keys, each 1–128 bytes and matching                                              
 	// `[A-Za-z0-9][A-Za-z0-9_.-]*`.                                                               
 	HandlerKeys                                                             []string               `json:"handler_keys"`
-	ProtocolVersion                                                         *RunnerProtocolVersion `json:"protocol_version"`
+	ProtocolVersion                                                         *RunnerProtocolVersion `json:"protocol_version,omitempty"`
 	// Optional runner implementation version, retained as display metadata;                       
 	// a supplied value is non-blank and at most 128 bytes long.                                   
-	RunnerVersion                                                           *string                `json:"runner_version"`
+	RunnerVersion                                                           *string                `json:"runner_version,omitempty"`
 	// Optional semantic SDK version, used by the server to report whether                         
 	// this session is older than a peer. A supplied value must parse as a                         
 	// semantic version and be non-blank and at most 128 bytes long.                               
-	SDKVersion                                                              *string                `json:"sdk_version"`
+	SDKVersion                                                              *string                `json:"sdk_version,omitempty"`
 }
 
 // Confirms that this connection's `announce` was retained.
@@ -664,13 +749,23 @@ type ReportRejectedFrame struct {
 	Type                                ReportRejectedEventType `json:"type"`
 }
 
+// Just the `type` tag of a frame. Decode this first, then the frame it names.
+type RunnerFrameTag struct {
+	Type RunnerFrameKind `json:"type"`
+}
+
+// Just the `type` tag of a frame. Decode this first, then the frame it names.
+type ServerFrameTag struct {
+	Type ServerFrameKind `json:"type"`
+}
+
 // Connect, authenticate and announce, then deliver work to the scripted handlers. Answered
 // by `connected` or `connect_failed`.
 type StartCommand struct {
 	ConcurrencyCapacity                                         int64             `json:"concurrency_capacity"`
-	DisplayName                                                 *string           `json:"display_name"`
+	DisplayName                                                 *string           `json:"display_name,omitempty"`
 	Handlers                                                    []HandlerScript   `json:"handlers"`
-	RunnerVersion                                               *string           `json:"runner_version"`
+	RunnerVersion                                               *string           `json:"runner_version,omitempty"`
 	SecretStore                                                 SecretStoreConfig `json:"secret_store"`
 	Token                                                       string            `json:"token"`
 	// The runner WebSocket URL, e.g. as printed by the harness.                  

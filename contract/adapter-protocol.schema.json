@@ -466,6 +466,76 @@
         "stopped",
         "error"
       ]
+    },
+    "AdapterCommandTag": {
+      "type": "object",
+      "description": "Just the `type` tag of a command line. Decode this first, then the command it names.",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/AdapterCommandKind"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "AdapterEventTag": {
+      "type": "object",
+      "description": "Just the `type` tag of an event line. Decode this first, then the event it names.",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/AdapterEventKind"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    },
+    "AdapterRegistration": {
+      "type": "object",
+      "description": "One SDK adapter the conformance runner can drive.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name used by `--adapter` and in the report."
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Program and arguments, run from `cwd`."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory, relative to the repository root."
+        }
+      },
+      "required": [
+        "name",
+        "command",
+        "cwd"
+      ],
+      "additionalProperties": false
+    },
+    "AdapterRegistry": {
+      "type": "object",
+      "description": "The contents of conformance/adapters.json.",
+      "properties": {
+        "adapters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AdapterRegistration"
+          }
+        }
+      },
+      "required": [
+        "adapters"
+      ],
+      "additionalProperties": false
     }
   }
 }

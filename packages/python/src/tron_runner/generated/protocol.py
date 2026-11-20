@@ -21,14 +21,19 @@ def from_str(x: Any) -> str:
     return x
 
 
-def from_int(x: Any) -> int:
-    assert isinstance(x, int) and not isinstance(x, bool)
-    return x
-
-
 def from_list(f: Callable[[Any], T], x: Any) -> List[T]:
     assert isinstance(x, list)
     return [f(y) for y in x]
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
 
 
 def from_none(x: Any) -> Any:
@@ -43,11 +48,6 @@ def from_union(fs, x):
         except:
             pass
     assert False
-
-
-def to_class(c: Type[T], x: Any) -> dict:
-    assert isinstance(x, c)
-    return cast(Any, x).to_dict()
 
 
 def from_bool(x: Any) -> bool:
@@ -197,6 +197,24 @@ class AdapterCommandKind(Enum):
     STOP = "stop"
 
 
+@dataclass
+class AdapterCommandTag:
+    """Just the `type` tag of a command line. Decode this first, then the command it names."""
+
+    type: AdapterCommandKind
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'AdapterCommandTag':
+        assert isinstance(obj, dict)
+        type = AdapterCommandKind(obj.get("type"))
+        return AdapterCommandTag(type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["type"] = to_enum(AdapterCommandKind, self.type)
+        return result
+
+
 class AdapterErrorEventType(Enum):
     ERROR = "error"
 
@@ -237,6 +255,71 @@ class AdapterEventKind(Enum):
     REPORT_RECORDED = "report_recorded"
     REPORT_REJECTED = "report_rejected"
     STOPPED = "stopped"
+
+
+@dataclass
+class AdapterEventTag:
+    """Just the `type` tag of an event line. Decode this first, then the event it names."""
+
+    type: AdapterEventKind
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'AdapterEventTag':
+        assert isinstance(obj, dict)
+        type = AdapterEventKind(obj.get("type"))
+        return AdapterEventTag(type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["type"] = to_enum(AdapterEventKind, self.type)
+        return result
+
+
+@dataclass
+class AdapterRegistration:
+    """One SDK adapter the conformance runner can drive."""
+
+    command: List[str]
+    """Program and arguments, run from `cwd`."""
+
+    cwd: str
+    """Working directory, relative to the repository root."""
+
+    name: str
+    """Name used by `--adapter` and in the report."""
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'AdapterRegistration':
+        assert isinstance(obj, dict)
+        command = from_list(from_str, obj.get("command"))
+        cwd = from_str(obj.get("cwd"))
+        name = from_str(obj.get("name"))
+        return AdapterRegistration(command, cwd, name)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["command"] = from_list(from_str, self.command)
+        result["cwd"] = from_str(self.cwd)
+        result["name"] = from_str(self.name)
+        return result
+
+
+@dataclass
+class AdapterRegistry:
+    """The contents of conformance/adapters.json."""
+
+    adapters: List[AdapterRegistration]
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'AdapterRegistry':
+        assert isinstance(obj, dict)
+        adapters = from_list(AdapterRegistration.from_dict, obj.get("adapters"))
+        return AdapterRegistry(adapters)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["adapters"] = from_list(lambda x: to_class(AdapterRegistration, x), self.adapters)
+        return result
 
 
 class RunnerProtocolVersion(Enum):
@@ -904,6 +987,24 @@ class RunnerFrameKind(Enum):
     REPORT = "report"
 
 
+@dataclass
+class RunnerFrameTag:
+    """Just the `type` tag of a frame. Decode this first, then the frame it names."""
+
+    type: RunnerFrameKind
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'RunnerFrameTag':
+        assert isinstance(obj, dict)
+        type = RunnerFrameKind(obj.get("type"))
+        return RunnerFrameTag(type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["type"] = to_enum(RunnerFrameKind, self.type)
+        return result
+
+
 class ServerFrameKind(Enum):
     """The `type` tag of every frame Tron sends. Decode this first, then the frame it names."""
 
@@ -916,6 +1017,24 @@ class ServerFrameKind(Enum):
     REPORT_RECORDED = "report_recorded"
     REPORT_REJECTED = "report_rejected"
     WORK = "work"
+
+
+@dataclass
+class ServerFrameTag:
+    """Just the `type` tag of a frame. Decode this first, then the frame it names."""
+
+    type: ServerFrameKind
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'ServerFrameTag':
+        assert isinstance(obj, dict)
+        type = ServerFrameKind(obj.get("type"))
+        return ServerFrameTag(type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["type"] = to_enum(ServerFrameKind, self.type)
+        return result
 
 
 class HandlerOutcomeKind(Enum):
@@ -1183,6 +1302,14 @@ def adapter_command_kind_to_dict(x: AdapterCommandKind) -> Any:
     return to_enum(AdapterCommandKind, x)
 
 
+def adapter_command_tag_from_dict(s: Any) -> AdapterCommandTag:
+    return AdapterCommandTag.from_dict(s)
+
+
+def adapter_command_tag_to_dict(x: AdapterCommandTag) -> Any:
+    return to_class(AdapterCommandTag, x)
+
+
 def adapter_error_event_from_dict(s: Any) -> AdapterErrorEvent:
     return AdapterErrorEvent.from_dict(s)
 
@@ -1197,6 +1324,30 @@ def adapter_event_kind_from_dict(s: Any) -> AdapterEventKind:
 
 def adapter_event_kind_to_dict(x: AdapterEventKind) -> Any:
     return to_enum(AdapterEventKind, x)
+
+
+def adapter_event_tag_from_dict(s: Any) -> AdapterEventTag:
+    return AdapterEventTag.from_dict(s)
+
+
+def adapter_event_tag_to_dict(x: AdapterEventTag) -> Any:
+    return to_class(AdapterEventTag, x)
+
+
+def adapter_registration_from_dict(s: Any) -> AdapterRegistration:
+    return AdapterRegistration.from_dict(s)
+
+
+def adapter_registration_to_dict(x: AdapterRegistration) -> Any:
+    return to_class(AdapterRegistration, x)
+
+
+def adapter_registry_from_dict(s: Any) -> AdapterRegistry:
+    return AdapterRegistry.from_dict(s)
+
+
+def adapter_registry_to_dict(x: AdapterRegistry) -> Any:
+    return to_class(AdapterRegistry, x)
 
 
 def announce_frame_from_dict(s: Any) -> AnnounceFrame:
@@ -1415,6 +1566,14 @@ def runner_frame_kind_to_dict(x: RunnerFrameKind) -> Any:
     return to_enum(RunnerFrameKind, x)
 
 
+def runner_frame_tag_from_dict(s: Any) -> RunnerFrameTag:
+    return RunnerFrameTag.from_dict(s)
+
+
+def runner_frame_tag_to_dict(x: RunnerFrameTag) -> Any:
+    return to_class(RunnerFrameTag, x)
+
+
 def runner_handler_key_from_dict(s: Any) -> str:
     return from_str(s)
 
@@ -1453,6 +1612,14 @@ def server_frame_kind_from_dict(s: Any) -> ServerFrameKind:
 
 def server_frame_kind_to_dict(x: ServerFrameKind) -> Any:
     return to_enum(ServerFrameKind, x)
+
+
+def server_frame_tag_from_dict(s: Any) -> ServerFrameTag:
+    return ServerFrameTag.from_dict(s)
+
+
+def server_frame_tag_to_dict(x: ServerFrameTag) -> Any:
+    return to_class(ServerFrameTag, x)
 
 
 def start_command_from_dict(s: Any) -> StartCommand:

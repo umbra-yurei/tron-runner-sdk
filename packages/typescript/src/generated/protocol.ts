@@ -80,6 +80,14 @@ export interface AcceptedFrame {
 export type AcceptedFrameType = "accepted";
 
 /**
+ * Just the `type` tag of a command line. Decode this first, then the command it names.
+ */
+export interface AdapterCommandTag {
+    type: AdapterCommandKind;
+    [property: string]: any;
+}
+
+/**
  * The `type` tag of every command the harness sends to an adapter, one JSON object per line
  * on the adapter's standard input.
  */
@@ -96,10 +104,43 @@ export interface AdapterErrorEvent {
 export type AdapterErrorEventType = "error";
 
 /**
+ * Just the `type` tag of an event line. Decode this first, then the event it names.
+ */
+export interface AdapterEventTag {
+    type: AdapterEventKind;
+    [property: string]: any;
+}
+
+/**
  * The `type` tag of every event an adapter writes, one JSON object per line on its standard
  * output.
  */
 export type AdapterEventKind = "ready" | "connected" | "connect_failed" | "handler_invoked" | "delivery_accepted" | "accept_refused" | "report_recorded" | "report_rejected" | "pending" | "stopped" | "error";
+
+/**
+ * The contents of conformance/adapters.json.
+ */
+export interface AdapterRegistry {
+    adapters: AdapterRegistration[];
+}
+
+/**
+ * One SDK adapter the conformance runner can drive.
+ */
+export interface AdapterRegistration {
+    /**
+     * Program and arguments, run from `cwd`.
+     */
+    command: string[];
+    /**
+     * Working directory, relative to the repository root.
+     */
+    cwd: string;
+    /**
+     * Name used by `--adapter` and in the report.
+     */
+    name: string;
+}
 
 /**
  * Optional, at most once per connection, after `authenticated`: declares
@@ -429,9 +470,25 @@ export interface ReportRejectedFrame {
 }
 
 /**
+ * Just the `type` tag of a frame. Decode this first, then the frame it names.
+ */
+export interface RunnerFrameTag {
+    type: RunnerFrameKind;
+    [property: string]: any;
+}
+
+/**
  * The `type` tag of every frame a runner sends.
  */
 export type RunnerFrameKind = "authenticate" | "announce" | "accept" | "report";
+
+/**
+ * Just the `type` tag of a frame. Decode this first, then the frame it names.
+ */
+export interface ServerFrameTag {
+    type: ServerFrameKind;
+    [property: string]: any;
+}
 
 /**
  * The `type` tag of every frame Tron sends. Decode this first, then the frame it names.
@@ -599,6 +656,14 @@ export class Convert {
         return JSON.stringify(uncast(value, r("AdapterCommandKind")), null, 2);
     }
 
+    public static toAdapterCommandTag(json: string): AdapterCommandTag {
+        return cast(JSON.parse(json), r("AdapterCommandTag"));
+    }
+
+    public static adapterCommandTagToJson(value: AdapterCommandTag): string {
+        return JSON.stringify(uncast(value, r("AdapterCommandTag")), null, 2);
+    }
+
     public static toAdapterErrorEvent(json: string): AdapterErrorEvent {
         return cast(JSON.parse(json), r("AdapterErrorEvent"));
     }
@@ -613,6 +678,30 @@ export class Convert {
 
     public static adapterEventKindToJson(value: AdapterEventKind): string {
         return JSON.stringify(uncast(value, r("AdapterEventKind")), null, 2);
+    }
+
+    public static toAdapterEventTag(json: string): AdapterEventTag {
+        return cast(JSON.parse(json), r("AdapterEventTag"));
+    }
+
+    public static adapterEventTagToJson(value: AdapterEventTag): string {
+        return JSON.stringify(uncast(value, r("AdapterEventTag")), null, 2);
+    }
+
+    public static toAdapterRegistration(json: string): AdapterRegistration {
+        return cast(JSON.parse(json), r("AdapterRegistration"));
+    }
+
+    public static adapterRegistrationToJson(value: AdapterRegistration): string {
+        return JSON.stringify(uncast(value, r("AdapterRegistration")), null, 2);
+    }
+
+    public static toAdapterRegistry(json: string): AdapterRegistry {
+        return cast(JSON.parse(json), r("AdapterRegistry"));
+    }
+
+    public static adapterRegistryToJson(value: AdapterRegistry): string {
+        return JSON.stringify(uncast(value, r("AdapterRegistry")), null, 2);
     }
 
     public static toAnnounceFrame(json: string): AnnounceFrame {
@@ -831,6 +920,14 @@ export class Convert {
         return JSON.stringify(uncast(value, r("RunnerFrameKind")), null, 2);
     }
 
+    public static toRunnerFrameTag(json: string): RunnerFrameTag {
+        return cast(JSON.parse(json), r("RunnerFrameTag"));
+    }
+
+    public static runnerFrameTagToJson(value: RunnerFrameTag): string {
+        return JSON.stringify(uncast(value, r("RunnerFrameTag")), null, 2);
+    }
+
     public static toRunnerHandlerKey(json: string): string {
         return cast(JSON.parse(json), "");
     }
@@ -869,6 +966,14 @@ export class Convert {
 
     public static serverFrameKindToJson(value: ServerFrameKind): string {
         return JSON.stringify(uncast(value, r("ServerFrameKind")), null, 2);
+    }
+
+    public static toServerFrameTag(json: string): ServerFrameTag {
+        return cast(JSON.parse(json), r("ServerFrameTag"));
+    }
+
+    public static serverFrameTagToJson(value: ServerFrameTag): string {
+        return JSON.stringify(uncast(value, r("ServerFrameTag")), null, 2);
     }
 
     public static toStartCommand(json: string): StartCommand {
@@ -1076,9 +1181,23 @@ const typeMap: any = {
         { json: "secret", js: "secret", typ: "" },
         { json: "type", js: "type", typ: r("AcceptedFrameType") },
     ], "any"),
+    "AdapterCommandTag": o([
+        { json: "type", js: "type", typ: r("AdapterCommandKind") },
+    ], "any"),
     "AdapterErrorEvent": o([
         { json: "message", js: "message", typ: "" },
         { json: "type", js: "type", typ: r("AdapterErrorEventType") },
+    ], false),
+    "AdapterEventTag": o([
+        { json: "type", js: "type", typ: r("AdapterEventKind") },
+    ], "any"),
+    "AdapterRegistry": o([
+        { json: "adapters", js: "adapters", typ: a(r("AdapterRegistration")) },
+    ], false),
+    "AdapterRegistration": o([
+        { json: "command", js: "command", typ: a("") },
+        { json: "cwd", js: "cwd", typ: "" },
+        { json: "name", js: "name", typ: "" },
     ], false),
     "AnnounceFrame": o([
         { json: "announcement", js: "announcement", typ: r("RunnerAnnouncement") },
@@ -1177,6 +1296,12 @@ const typeMap: any = {
         { json: "delivery_id", js: "delivery_id", typ: "" },
         { json: "reason", js: "reason", typ: r("ReportRejection") },
         { json: "type", js: "type", typ: r("ReportRejectedEventType") },
+    ], "any"),
+    "RunnerFrameTag": o([
+        { json: "type", js: "type", typ: r("RunnerFrameKind") },
+    ], "any"),
+    "ServerFrameTag": o([
+        { json: "type", js: "type", typ: r("ServerFrameKind") },
     ], "any"),
     "StartCommand": o([
         { json: "concurrency_capacity", js: "concurrency_capacity", typ: 0 },

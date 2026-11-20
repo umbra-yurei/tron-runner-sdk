@@ -1,7 +1,9 @@
-[
-  {
-    "name": "reference-typescript",
-    "command": ["node", "conformance/adapters/reference/adapter.ts"],
-    "cwd": "."
-  }
-]
+{
+  "adapters": [
+    {
+      "name": "reference-typescript",
+      "command": ["node", "conformance/adapters/reference/adapter.ts"],
+      "cwd": "."
+    }
+  ]
+}

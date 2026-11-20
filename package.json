@@ -13,7 +13,8 @@
     "sync:protocol": "node tools/sync-protocol.ts",
     "typecheck": "tsc --noEmit",
     "check": "npm run check:generated && npm run typecheck",
-    "conformance": "node conformance/run.ts"
+    "conformance": "node conformance/run.ts",
+    "check:bindings": "node tools/check-bindings.ts"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

@@ -2,15 +2,10 @@
 // and writes AdapterEvent lines on stdout (contract/adapter-protocol.schema.json).
 import { spawn, type ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
+import type { AdapterRegistration } from "../packages/typescript/src/generated/protocol.ts";
 import { decodeEvent, encodeLine, type AdapterCommand, type AdapterEvent } from "./adapter-codec.ts";
 
-export interface AdapterSpec {
-  name: string;
-  /** Program and arguments, run from `cwd`. */
-  command: string[];
-  /** Relative to the repository root. */
-  cwd: string;
-}
+export type AdapterSpec = AdapterRegistration;
 
 const DEFAULT_EVENT_TIMEOUT_MS = 15_000;
 const SILENCE_WINDOW_MS = 1_500;

@@ -57,25 +57,12 @@ const eventDecoders: Record<AdapterEventKind, (json: string) => AdapterEvent> = 
   error: Convert.toAdapterErrorEvent,
 };
 
-function tagOf(line: string): string {
-  const parsed: unknown = JSON.parse(line);
-  if (typeof parsed !== "object" || parsed === null || !("type" in parsed) || typeof parsed.type !== "string") {
-    throw new Error(`line carries no type tag: ${line}`);
-  }
-  return parsed.type;
-}
-
-function decoderFor<K extends string, V>(table: Record<K, V>, tag: string, line: string): V {
-  if (!Object.hasOwn(table, tag)) throw new Error(`unknown tag "${tag}" in: ${line}`);
-  return table[tag as K];
-}
-
 export function decodeCommand(line: string): AdapterCommand {
-  return decoderFor(commandDecoders, tagOf(line), line)(line);
+  return commandDecoders[Convert.toAdapterCommandTag(line).type](line);
 }
 
 export function decodeEvent(line: string): AdapterEvent {
-  return decoderFor(eventDecoders, tagOf(line), line)(line);
+  return eventDecoders[Convert.toAdapterEventTag(line).type](line);
 }
 
 export function encodeLine(message: AdapterCommand | AdapterEvent): string {
