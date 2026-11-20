@@ -15,6 +15,8 @@ export interface Bundle {
   protocolVersion: string;
   /** The AsyncAPI document's own `info.version`. */
   documentVersion: string;
+  /** The runner WebSocket's channel address, e.g. "/api/runners/ws". */
+  channelAddress: string;
 }
 
 const ASYNCAPI_SCHEMA_PREFIX = "#/components/schemas/";
@@ -112,6 +114,12 @@ export function buildBundle(asyncapiPath: string, adapterSchemaPath: string): Bu
   const operations = document.operations as Record<string, Schema>;
   const channels = document.channels as Record<string, Schema>;
 
+  const addresses = Object.values(channels).map((channel) => String(channel.address ?? ""));
+  const channelAddress = addresses[0] ?? "";
+  if (addresses.length !== 1 || !channelAddress.startsWith("/")) {
+    throw new Error("the AsyncAPI document must describe exactly one channel with an absolute address");
+  }
+
   const definitions: Record<string, Schema> = {};
   const topLevel: string[] = [];
 
@@ -172,5 +180,6 @@ export function buildBundle(asyncapiPath: string, adapterSchemaPath: string): Bu
     topLevel: [...new Set(topLevel)].sort(),
     protocolVersion,
     documentVersion: String(info.version),
+    channelAddress,
   };
 }

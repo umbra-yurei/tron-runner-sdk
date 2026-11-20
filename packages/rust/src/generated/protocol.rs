@@ -316,7 +316,8 @@ pub enum ConnectFailure {
     Unreachable,
 }
 
-/// The SDK authenticated and its announcement was acknowledged.
+/// The SDK authenticated and its announcement was acknowledged. Written again after every
+/// reconnect, with the new session's id.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedEvent {
     pub session_id: String,
@@ -705,13 +706,16 @@ pub struct SecretStoreConfig {
 }
 
 /// Which delivery-secret persistence the SDK is given. `file` is the SDK's local-file
-/// default pointed at `directory`. `tampered` is a custom store, written through the SDK's
-/// pluggable-store interface, that wraps the file default and returns a wrong secret from
-/// every load.
+/// default pointed at `directory`. `tampered` and `retaining` are custom stores written
+/// through the SDK's pluggable-store interface, each wrapping the file default: `tampered`
+/// returns a wrong secret from every load, `retaining` never deletes an entry, even after
+/// Tron recorded the report.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SecretStoreKind {
     File,
+
+    Retaining,
 
     Tampered,
 }

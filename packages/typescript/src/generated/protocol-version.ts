@@ -5,3 +5,5 @@
 export const PROTOCOL_VERSION = "v1";
 /** The version of the AsyncAPI document the bindings were generated from. */
 export const PROTOCOL_DOCUMENT_VERSION = "0.1.0";
+/** The path of the runner WebSocket, relative to Tron's base URL. */
+export const RUNNER_CHANNEL_ADDRESS = "/api/runners/ws";

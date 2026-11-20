@@ -5,3 +5,5 @@
 pub const PROTOCOL_VERSION: &str = "v1";
 /// The version of the AsyncAPI document the bindings were generated from.
 pub const PROTOCOL_DOCUMENT_VERSION: &str = "0.1.0";
+/// The path of the runner WebSocket, relative to Tron's base URL.
+pub const RUNNER_CHANNEL_ADDRESS: &str = "/api/runners/ws";

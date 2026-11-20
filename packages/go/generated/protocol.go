@@ -555,7 +555,8 @@ type ConnectFailedEvent struct {
 	Type   ConnectFailedEventType `json:"type"`
 }
 
-// The SDK authenticated and its announcement was acknowledged.
+// The SDK authenticated and its announcement was acknowledged. Written again after every
+// reconnect, with the new session's id.
 type ConnectedEvent struct {
 	SessionID string             `json:"session_id"`
 	Type      ConnectedEventType `json:"type"`
@@ -984,14 +985,16 @@ const (
 )
 
 // Which delivery-secret persistence the SDK is given. `file` is the SDK's local-file
-// default pointed at `directory`. `tampered` is a custom store, written through the SDK's
-// pluggable-store interface, that wraps the file default and returns a wrong secret from
-// every load.
+// default pointed at `directory`. `tampered` and `retaining` are custom stores written
+// through the SDK's pluggable-store interface, each wrapping the file default: `tampered`
+// returns a wrong secret from every load, `retaining` never deletes an entry, even after
+// Tron recorded the report.
 type SecretStoreKind string
 
 const (
-	File     SecretStoreKind = "file"
-	Tampered SecretStoreKind = "tampered"
+	File      SecretStoreKind = "file"
+	Retaining SecretStoreKind = "retaining"
+	Tampered  SecretStoreKind = "tampered"
 )
 
 type StartCommandType string

@@ -1,0 +1,20 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  generated:
+    name: Generated bindings are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18
+          cache: npm
+      - run: npm ci
+      # Re-generates every language's bindings in memory and fails if a committed file differs;
+      # then type-checks the generator, the conformance harness and the reference adapter.
+      - run: npm run check

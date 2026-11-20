@@ -3,3 +3,4 @@
 # change the sources and run `npm run generate`; CI rejects stale output.
 PROTOCOL_VERSION = "v1"  # the runner protocol version this package speaks
 PROTOCOL_DOCUMENT_VERSION = "0.1.0"  # the AsyncAPI document version the bindings were generated from
+RUNNER_CHANNEL_ADDRESS = "/api/runners/ws"  # the path of the runner WebSocket, relative to Tron's base URL

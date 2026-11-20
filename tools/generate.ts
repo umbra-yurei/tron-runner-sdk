@@ -63,7 +63,7 @@ export async function render(): Promise<Map<string, string>> {
     files.set(join(target.directory, target.bindingsFile), await renderBindings(target, bundle));
     files.set(
       join(target.directory, target.versionFile),
-      banner(target, bundle) + target.versionSource(bundle.protocolVersion, bundle.documentVersion),
+      banner(target, bundle) + target.versionSource({ protocol: bundle.protocolVersion, document: bundle.documentVersion, channel: bundle.channelAddress }),
     );
   }
   // Tron's REST types, for the conformance harness only (never a package).

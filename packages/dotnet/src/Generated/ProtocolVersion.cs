@@ -10,5 +10,8 @@ namespace Tron.RunnerSdk.Generated
 
         /// <summary>The version of the AsyncAPI document the bindings were generated from.</summary>
         public const string DocumentVersion = "0.1.0";
+
+        /// <summary>The path of the runner WebSocket, relative to Tron's base URL.</summary>
+        public const string ChannelAddress = "/api/runners/ws";
     }
 }

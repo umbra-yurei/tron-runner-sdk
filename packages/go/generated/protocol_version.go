@@ -8,3 +8,6 @@ const ProtocolVersion = "v1"
 
 // ProtocolDocumentVersion is the AsyncAPI document version the bindings were generated from.
 const ProtocolDocumentVersion = "0.1.0"
+
+// RunnerChannelAddress is the path of the runner WebSocket, relative to Tron's base URL.
+const RunnerChannelAddress = "/api/runners/ws"

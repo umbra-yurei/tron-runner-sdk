@@ -227,7 +227,8 @@ namespace Tron.RunnerSdk.Generated
     }
 
     /// <summary>
-    /// The SDK authenticated and its announcement was acknowledged.
+    /// The SDK authenticated and its announcement was acknowledged. Written again after every
+    /// reconnect, with the new session's id.
     /// </summary>
     public partial class ConnectedEvent
     {
@@ -707,11 +708,12 @@ namespace Tron.RunnerSdk.Generated
 
     /// <summary>
     /// Which delivery-secret persistence the SDK is given. `file` is the SDK's local-file
-    /// default pointed at `directory`. `tampered` is a custom store, written through the SDK's
-    /// pluggable-store interface, that wraps the file default and returns a wrong secret from
-    /// every load.
+    /// default pointed at `directory`. `tampered` and `retaining` are custom stores written
+    /// through the SDK's pluggable-store interface, each wrapping the file default: `tampered`
+    /// returns a wrong secret from every load, `retaining` never deletes an entry, even after
+    /// Tron recorded the report.
     /// </summary>
-    public enum SecretStoreKindEnum { File, Tampered };
+    public enum SecretStoreKindEnum { File, Retaining, Tampered };
 
     public enum StartCommandType { Start };
 
@@ -2010,6 +2012,8 @@ namespace Tron.RunnerSdk.Generated
             {
                 case "file":
                     return SecretStoreKindEnum.File;
+                case "retaining":
+                    return SecretStoreKindEnum.Retaining;
                 case "tampered":
                     return SecretStoreKindEnum.Tampered;
             }
@@ -2022,6 +2026,9 @@ namespace Tron.RunnerSdk.Generated
             {
                 case SecretStoreKindEnum.File:
                     JsonSerializer.Serialize(writer, "file", options);
+                    return;
+                case SecretStoreKindEnum.Retaining:
+                    JsonSerializer.Serialize(writer, "retaining", options);
                     return;
                 case SecretStoreKindEnum.Tampered:
                     JsonSerializer.Serialize(writer, "tampered", options);
