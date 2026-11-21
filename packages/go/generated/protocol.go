@@ -564,12 +564,16 @@ type AdapterRegistry struct {
 
 // One SDK adapter the conformance runner can drive.
 type AdapterRegistration struct {
-	// Program and arguments, run from `cwd`.                      
-	Command                                               []string `json:"command"`
-	// Working directory, relative to the repository root.         
-	Cwd                                                   string   `json:"cwd"`
-	// Name used by `--adapter` and in the report.                 
-	Name                                                  string   `json:"name"`
+	// Optional program and arguments, run once from `cwd` before the adapter is first launched.         
+	// A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper             
+	// such as `go run` would leave an orphan child behind when the harness kills the adapter.           
+	Build                                                                                       []string `json:"build,omitempty"`
+	// Program and arguments, run from `cwd`.                                                            
+	Command                                                                                     []string `json:"command"`
+	// Working directory, relative to the repository root.                                               
+	Cwd                                                                                         string   `json:"cwd"`
+	// Name used by `--adapter` and in the report.                                                       
+	Name                                                                                        string   `json:"name"`
 }
 
 // Optional, at most once per connection, after `authenticated`: declares
@@ -802,13 +806,15 @@ type StoppedEvent struct {
 }
 
 // A run has been dispatched to this connection as one delivery. It
-// carries no job input or payload: only ids, the job's name and times.
+// carries no job input or payload: only ids, the job's name, the handler
+// key it was dispatched for and times.
 type WorkFrame struct {
 	// `accept` must arrive by this time. It is the push time plus the              
 	// job's delivery timeout.                                                      
 	AcceptDeadline                                                    string        `json:"accept_deadline"`
 	// Names this delivery; echo it in `accept` and `report`.                       
 	DeliveryID                                                        string        `json:"delivery_id"`
+	HandlerKey                                                        string        `json:"handler_key"`
 	// The job that was triggered.                                                  
 	JobID                                                             string        `json:"job_id"`
 	// The job's name, as the owner set it.                                         

@@ -129,6 +129,12 @@ export interface AdapterRegistry {
  */
 export interface AdapterRegistration {
     /**
+     * Optional program and arguments, run once from `cwd` before the adapter is first launched.
+     * A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+     * such as `go run` would leave an orphan child behind when the harness kills the adapter.
+     */
+    build?: string[];
+    /**
      * Program and arguments, run from `cwd`.
      */
     command: string[];
@@ -571,7 +577,8 @@ export type StoppedEventType = "stopped";
 
 /**
  * A run has been dispatched to this connection as one delivery. It
- * carries no job input or payload: only ids, the job's name and times.
+ * carries no job input or payload: only ids, the job's name, the handler
+ * key it was dispatched for and times.
  */
 export interface WorkFrame {
     /**
@@ -583,6 +590,7 @@ export interface WorkFrame {
      * Names this delivery; echo it in `accept` and `report`.
      */
     delivery_id: string;
+    handler_key: string;
     /**
      * The job that was triggered.
      */
@@ -1195,6 +1203,7 @@ const typeMap: any = {
         { json: "adapters", js: "adapters", typ: a(r("AdapterRegistration")) },
     ], false),
     "AdapterRegistration": o([
+        { json: "build", js: "build", typ: u(undefined, a("")) },
         { json: "command", js: "command", typ: a("") },
         { json: "cwd", js: "cwd", typ: "" },
         { json: "name", js: "name", typ: "" },
@@ -1332,6 +1341,7 @@ const typeMap: any = {
     "WorkFrame": o([
         { json: "accept_deadline", js: "accept_deadline", typ: "" },
         { json: "delivery_id", js: "delivery_id", typ: "" },
+        { json: "handler_key", js: "handler_key", typ: "" },
         { json: "job_id", js: "job_id", typ: "" },
         { json: "job_name", js: "job_name", typ: "" },
         { json: "run_id", js: "run_id", typ: "" },

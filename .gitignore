@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 /conformance/.run
 /.binding-checks
+/packages/go/.bin
 /packages/typescript/dist
 /packages/python/.venv
 /packages/python/dist

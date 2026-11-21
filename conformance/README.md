@@ -55,7 +55,7 @@ that reads only `type`, then dispatched to the generated decoder for that kind; 
 The Python adapter (`adapters/python/adapter.py`) uses the SDK's public API, so it needs the package's
 virtualenv first: `python3 -m venv packages/python/.venv && packages/python/.venv/bin/pip install -e 'packages/python[dev]'`.
 
-Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root). The
+Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root, and an optional `build` command the runner executes once from `cwd` before launching: a compiled SDK builds its adapter there, because a `go run`/`cargo run` wrapper would leave an orphan child when the harness kills the adapter). The
 reference adapter in `adapters/reference/` implements all of this on Node's WebSocket and is what keeps the harness
 itself tested.
 
@@ -67,3 +67,4 @@ itself tested.
 - `rust` — `packages/rust/conformance-adapter`, a binary over the public API of the `cruma-tron-runner` crate. The harness
   starts it with `cargo run`, and an adapter must write `ready` within seconds, so build it once first:
   `cargo build --manifest-path packages/rust/Cargo.toml -p cruma-tron-runner-conformance-adapter`.
+- `go` — `packages/go/conformance/adapter`, a binary over the public API of the Go module. Its `build` step compiles it to `packages/go/.bin/conformance-adapter` before each run (needs Go 1.23+).

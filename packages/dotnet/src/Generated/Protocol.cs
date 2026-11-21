@@ -130,6 +130,15 @@ namespace Cruma.Tron.Runner.Generated
     public partial class AdapterRegistration
     {
         /// <summary>
+        /// Optional program and arguments, run once from `cwd` before the adapter is first launched.
+        /// A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+        /// such as `go run` would leave an orphan child behind when the harness kills the adapter.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("build")]
+        public List<string> Build { get; set; }
+
+        /// <summary>
         /// Program and arguments, run from `cwd`.
         /// </summary>
         [JsonPropertyName("command")]
@@ -613,7 +622,8 @@ namespace Cruma.Tron.Runner.Generated
 
     /// <summary>
     /// A run has been dispatched to this connection as one delivery. It
-    /// carries no job input or payload: only ids, the job's name and times.
+    /// carries no job input or payload: only ids, the job's name, the handler
+    /// key it was dispatched for and times.
     /// </summary>
     public partial class WorkFrame
     {
@@ -629,6 +639,9 @@ namespace Cruma.Tron.Runner.Generated
         /// </summary>
         [JsonPropertyName("delivery_id")]
         public Guid DeliveryId { get; set; }
+
+        [JsonPropertyName("handler_key")]
+        public string HandlerKey { get; set; }
 
         /// <summary>
         /// The job that was triggered.
