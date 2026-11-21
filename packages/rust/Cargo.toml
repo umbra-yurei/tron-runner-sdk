@@ -1,0 +1,33 @@
+[package]
+name = "cruma-tron-runner"
+version = "0.1.0"
+edition = "2021"
+description = "Connect a worker to Tron, receive scheduled jobs over the runner protocol, and report their results."
+license = "MIT"
+repository = "https://github.com/umbra-yurei/tron-runner-sdk"
+readme = "README.md"
+keywords = ["tron", "scheduler", "worker", "runner", "websocket"]
+categories = ["asynchronous", "api-bindings"]
+include = ["src/**/*", "tests/**/*", "README.md", "LICENSE", "Cargo.toml"]
+
+[workspace]
+members = [".", "conformance-adapter"]
+
+[dependencies]
+async-trait = "0.1"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "fs"] }
+tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots"] }
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"

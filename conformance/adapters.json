@@ -4,6 +4,11 @@
       "name": "reference-typescript",
       "command": ["node", "conformance/adapters/reference/adapter.ts"],
       "cwd": "."
+    },
+    {
+      "name": "rust",
+      "command": ["cargo", "run", "--quiet", "--manifest-path", "packages/rust/Cargo.toml", "-p", "cruma-tron-runner-conformance-adapter"],
+      "cwd": "."
     }
   ]
 }
