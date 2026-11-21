@@ -219,8 +219,10 @@ pub enum AnnounceFrameType {
 /// What a runner declares about its connection in `announce`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RunnerAnnouncement {
-    /// Maximum concurrent work this session accepts; it must be positive.
-    pub concurrency_capacity: i64,
+    /// Maximum concurrent work this session accepts; it must be positive. Omitted values default
+    /// to 1 for compatibility with older runners.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub concurrency_capacity: Option<i64>,
 
     /// Optional human-readable name shown to the owner; a supplied value is
     /// non-blank and at most 128 bytes long.

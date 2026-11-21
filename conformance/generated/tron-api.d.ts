@@ -153,6 +153,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jobs/{job_id}/runner-activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getJobRunnerActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs/{job_id}/runs": {
         parameters: {
             query?: never;
@@ -251,6 +267,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jobs/{job_id}/webhook-test-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sendWebhookTestEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -319,6 +351,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listLiveRunnerSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhook-signature-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getWebhookSignatureVerification"];
         put?: never;
         post?: never;
         delete?: never;
@@ -510,7 +558,7 @@ export interface components {
          *     enum, not a bare string, so clients match on a value the compiler knows.
          * @enum {string}
          */
-        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "invalid_job_configuration" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "invalid_run_search" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "live_job_limit_reached" | "database_unavailable";
+        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "mcp_unavailable" | "invalid_mcp_request" | "unknown_mcp_tool" | "invalid_job_configuration" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "test_event_needs_webhook_job" | "invalid_run_search" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "live_job_limit_reached" | "database_unavailable";
         /**
          * @description How the backend authenticates requests.
          *
@@ -524,6 +572,15 @@ export interface components {
          * @enum {string}
          */
         AuthMode: "dev" | "oidc";
+        /**
+         * @description What a connected runner announced about itself. Every field is the
+         *     runner's own claim and optional; a runner that never announced has none.
+         */
+        ConnectedSessionIdentity: {
+            display_name?: string | null;
+            runner_version?: string | null;
+            sdk_version?: string | null;
+        };
         /**
          * @description Body of a successful `POST /api/worker-api-keys`: the key's metadata and
          *     its clear-text token. This is the only response that ever carries the
@@ -542,6 +599,12 @@ export interface components {
          * @enum {string}
          */
         DatabaseHealthStatus: "ready" | "unavailable";
+        /**
+         * Format: int32
+         * @description Which attempt of a run's delivery slot a delivery row is. The first push is
+         *     attempt 1; each retry is the previous attempt plus one.
+         */
+        DeliveryAttempt: number;
         /** @enum {string} */
         DeliveryMode: "one_runner" | "every_connected" | "advanced_at_most" | "advanced_at_least";
         /** @enum {string} */
@@ -629,8 +692,14 @@ export interface components {
             miss_grace_seconds?: number | null;
             missed_run: components["schemas"]["JobMissedRun"];
             name: string;
+            /**
+             * @description Attempts, backoff and retryable failures for runner deliveries. Omitted
+             *     means no retries.
+             */
+            retry_policy?: components["schemas"]["RetryPolicy"];
             schedule: components["schemas"]["JobSchedule"];
             target: components["schemas"]["JobTarget"];
+            webhook_configuration?: null | components["schemas"]["WebhookConfigurationRequest"];
         };
         /**
          * @description Safe, client-visible job configuration. It intentionally contains no
@@ -677,12 +746,14 @@ export interface components {
              *     public only while `visibility` is `public`.
              */
             public_id: string;
+            retry_policy: components["schemas"]["RetryPolicy"];
             schedule: components["schemas"]["JobSchedule"];
             target: components["schemas"]["JobTarget"];
             /** Format: date-time */
             updated_at: string;
             /** @description Whether anyone holding the public URL can read the job's status. */
             visibility: components["schemas"]["JobVisibility"];
+            webhook_configuration?: null | components["schemas"]["WebhookConfigurationResponse"];
         };
         /** @description A page of the owner-visible history for one job. */
         JobRunPageResponse: {
@@ -699,6 +770,14 @@ export interface components {
          *     secrets or opaque result data.
          */
         JobRunResponse: {
+            /**
+             * @description Each outbound request a webhook run made, oldest first. Only on
+             *     responses about one of the caller's own jobs. Empty for runner runs,
+             *     for runs not yet claimed, and for runs that pre-date the attempt ledger
+             *     (read those from the run's own `status`, `failure_kind`,
+             *     `http_status_code` and `delivery_duration_ms`).
+             */
+            attempts?: components["schemas"]["WebhookAttemptResponse"][];
             /** Format: date-time */
             created_at: string;
             /**
@@ -736,10 +815,22 @@ export interface components {
             /** Format: date-time */
             started_at?: string | null;
             status: components["schemas"]["RunStatus"];
+            status_derivation?: null | components["schemas"]["RunStatusDerivation"];
             status_reason?: null | components["schemas"]["RunStatusReason"];
             /** @description Durations derived from this run and its deliveries' durable timestamps. */
             timings: components["schemas"]["RunTimingResponse"];
             trigger: components["schemas"]["RunTrigger"];
+        };
+        /** @description Body of `GET /api/jobs/{job_id}/runner-activity`. */
+        JobRunnerActivityResponse: {
+            /** @description Ordered by runner name. Empty for a job whose recent runs reached no runner. */
+            runners: components["schemas"]["RunnerActivityResponse"][];
+            /**
+             * Format: int64
+             * @description How many of the job's newest runs were examined; at most
+             *     [`RECENT_RUN_COUNT`].
+             */
+            window_runs: number;
         };
         /**
          * @description A future execution schedule. Intervals are expressed in whole seconds so
@@ -789,6 +880,16 @@ export interface components {
          *     did. Live only; nothing here is stored.
          */
         LiveRunnerSession: {
+            /**
+             * Format: int32
+             * @description Effective compatibility capacity for this release.
+             */
+            concurrency_capacity: number;
+            /**
+             * Format: int64
+             * @description Durable unfinished deliveries assigned to this session.
+             */
+            current_load: number;
             /** @enum {string} */
             kind: "legacy";
             /**
@@ -807,6 +908,11 @@ export interface components {
              * @description Positive maximum number of concurrent deliveries this session accepts.
              */
             concurrency_capacity: number;
+            /**
+             * Format: int64
+             * @description Durable unfinished deliveries assigned to this session.
+             */
+            current_load: number;
             /** @description Optional human-readable name supplied by the runner. */
             display_name?: string | null;
             /** @description Stable handler keys this runner can execute. */
@@ -917,6 +1023,8 @@ export interface components {
             /** @description Server-owned missed-start timing rules used by the generated job editor. */
             miss_grace_window: components["schemas"]["MissGraceWindow"];
             mode: components["schemas"]["AuthMode"];
+            /** @description Server-owned retry-policy bounds and default used by the generated job editor. */
+            retry_policy_window: components["schemas"]["RetryPolicyWindow"];
             /**
              * Format: int32
              * @description Seconds a runner has, after opening the WebSocket, to send its
@@ -994,6 +1102,84 @@ export interface components {
         };
         /** @description Why `report` was rejected. */
         ReportRejection: "unknown_delivery" | "wrong_secret" | "not_in_flight";
+        /** @enum {string} */
+        RetryBackoff: "fixed" | "exponential";
+        RetryPolicy: {
+            /** @description Whether the wait stays at the base or doubles per attempt. */
+            backoff: components["schemas"]["RetryBackoff"];
+            /**
+             * Format: int32
+             * @description Seconds to wait after the first failed attempt; the base the backoff
+             *     kind grows from.
+             */
+            backoff_seconds: number;
+            /**
+             * Format: int32
+             * @description Total attempts per run, the first one included. 1 means no retries.
+             */
+            max_attempts: number;
+            /**
+             * Format: int32
+             * @description The longest wait between two attempts, whichever backoff kind is used.
+             */
+            max_backoff_seconds: number;
+            /** @description Runner jobs: retry when a pushed delivery is not accepted in time. */
+            on_accept_timeout: boolean;
+            /**
+             * @description Runner jobs: treat a runner disconnecting mid-run as a failed attempt
+             *     and retry it.
+             */
+            on_disconnect: boolean;
+            /** @description Runner jobs: retry when the runner reports `Err`. */
+            on_err: boolean;
+            /**
+             * @description Webhook jobs: re-send an attempt whose outcome is unknown because Tron
+             *     stopped while the request was in flight. Only safe when the receiver
+             *     deduplicates on `Tron-Delivery-Id`, so it is an explicit opt-in; without
+             *     it such a run stays failed and is never re-sent.
+             */
+            on_interrupted: boolean;
+            /**
+             * @description Webhook jobs: retry when the request could not reach the receiver or
+             *     the connection broke before a response.
+             */
+            on_network_error: boolean;
+            /**
+             * @description Webhook jobs: retry on a 5xx, 408 or 429 answer. A `Retry-After` header
+             *     on the answer is honoured when it still fits the run's window.
+             */
+            on_retryable_status: boolean;
+            /** @description Webhook jobs: retry when the receiver does not answer in time. */
+            on_timeout: boolean;
+            /**
+             * @description Webhook jobs: keep a bounded, redacted excerpt of each response body
+             *     on its attempt record. Off means no response body is ever stored.
+             */
+            record_response_excerpt: boolean;
+            /**
+             * Format: int32
+             * @description Webhook jobs: the most bytes of response body an excerpt keeps.
+             */
+            response_excerpt_max_bytes: number;
+        };
+        /**
+         * @description The server-owned bounds and default for a job's retry policy. Published
+         *     through the public config so the editor never copies these numbers.
+         */
+        RetryPolicyWindow: {
+            /** @description The policy a new job starts with: one attempt, no retries. */
+            default_policy: components["schemas"]["RetryPolicy"];
+            /** Format: int32 */
+            maximum_attempts: number;
+            /** Format: int32 */
+            maximum_backoff_seconds: number;
+            /** Format: int32 */
+            maximum_response_excerpt_bytes: number;
+            /** Format: int32 */
+            minimum_attempts: number;
+        };
+        /** @enum {string} */
+        RetryableFailure: "runner_err" | "accept_timeout" | "disconnected";
         /** @description One-time create/rotate response. Copy `secret` immediately: later reads expose only metadata. */
         RevealedWebhookSigningSecretResponse: {
             secret: string;
@@ -1019,6 +1205,13 @@ export interface components {
             accept_deadline: string;
             /** Format: date-time */
             accepted_at?: string | null;
+            /**
+             * @description Which attempt of its delivery slot this push is. Rows written before
+             *     retries existed read as attempt 1.
+             */
+            attempt: components["schemas"]["DeliveryAttempt"];
+            connected_session?: null | components["schemas"]["ConnectedSessionIdentity"];
+            failure?: null | components["schemas"]["RetryableFailure"];
             /** Format: date-time */
             finished_at?: string | null;
             /** Format: uuid */
@@ -1028,10 +1221,27 @@ export interface components {
             outcome?: null | components["schemas"]["RunOutcomeKind"];
             /** @description The message the runner sent with its `Ok`/`Err` report, once it has. */
             outcome_message?: string | null;
+            /**
+             * Format: uuid
+             * @description The failed attempt this push retries; absent on first attempts.
+             */
+            previous_delivery_id?: string | null;
             /** Format: date-time */
             pushed_at: string;
+            /**
+             * Format: date-time
+             * @description When the retry of this failed attempt is due. Present only until that
+             *     retry is pushed or abandoned.
+             */
+            retry_due_at?: string | null;
             /** @description Name of the worker API key whose runner received the push. */
             runner_name: string;
+            /**
+             * Format: uuid
+             * @description The runner connection the push went to. Retained with the delivery, so
+             *     every row has one, including rows written before retries existed.
+             */
+            runner_session_id: string;
             state: components["schemas"]["DeliveryState"];
             /** @description Durations derived from this delivery and its parent run's timestamps. */
             timings: components["schemas"]["RunTimingResponse"];
@@ -1059,6 +1269,64 @@ export interface components {
         RunOutcomeKind: "ok" | "err";
         /** @enum {string} */
         RunStatus: "pending" | "delivering" | "accepted" | "running" | "succeeded" | "failed" | "timed_out" | "cancelled" | "skipped" | "failed_to_deliver";
+        /**
+         * @description How a runner run's status follows from the job's delivery mode and the
+         *     run's deliveries. Computed with the dispatcher's own settlement rule from
+         *     the job's CURRENT configuration, so it can disagree with `status` when the
+         *     delivery mode changed after the run ended or the run was cancelled.
+         */
+        RunStatusDerivation: {
+            /**
+             * Format: int32
+             * @description Delivery slots whose last attempt reported `ok`.
+             */
+            completed_successes: number;
+            /**
+             * Format: int32
+             * @description Slots whose last attempt failed, with no retry left or selected.
+             */
+            failed_slots: number;
+            /**
+             * Format: int32
+             * @description Attempts the job's retry policy allows per slot, the first included.
+             */
+            max_attempts: number;
+            /** @description The job's current delivery mode. */
+            mode: components["schemas"]["JobDeliveryMode"];
+            /**
+             * Format: int32
+             * @description Attempts, across all slots, that have not finished.
+             */
+            open_attempts: number;
+            /**
+             * Format: int32
+             * @description Slots whose last attempt is still pushed, accepted or in flight.
+             */
+            open_slots: number;
+            /**
+             * Format: int32
+             * @description `ok` reports the run needs to succeed.
+             */
+            required_successes: number;
+            /**
+             * Format: int32
+             * @description Slots whose last attempt failed and whose retry is scheduled.
+             */
+            retry_scheduled_slots: number;
+            settled_status?: null | components["schemas"]["RunStatus"];
+            /**
+             * Format: int32
+             * @description Attempts, across all slots, that have finished.
+             */
+            terminal_attempts: number;
+            /**
+             * Format: int32
+             * @description Slots whose last attempt was never accepted, with no retry left or
+             *     selected.
+             */
+            undelivered_slots: number;
+            verdict: components["schemas"]["RunVerdict"];
+        };
         /** @enum {string} */
         RunStatusReason: "missed_policy_skip" | "missed_deferral_limit" | "missed_deferred" | "no_runner_in_window" | "personal_feature_disabled" | "job_deleted";
         /**
@@ -1089,14 +1357,60 @@ export interface components {
             total_ms?: number | null;
         };
         /** @enum {string} */
-        RunTrigger: "scheduled" | "manual";
+        RunTrigger: "scheduled" | "manual" | "test";
+        /**
+         * @description Where the settlement rule stands for a run's current delivery slots.
+         * @enum {string}
+         */
+        RunVerdict: "in_progress" | "awaiting_retry" | "threshold_met" | "threshold_missed" | "nothing_accepted";
+        /** @description One runner key's share of the job's recent runs. */
+        RunnerActivityResponse: {
+            /**
+             * Format: int64
+             * @description Runs whose last attempt reported err.
+             */
+            failed: number;
+            /**
+             * Format: int64
+             * @description Runs whose last attempt was never accepted.
+             */
+            failed_to_deliver: number;
+            last_failure?: null | components["schemas"]["RetryableFailure"];
+            last_outcome?: null | components["schemas"]["RunOutcomeKind"];
+            /** Format: date-time */
+            last_pushed_at: string;
+            last_state: components["schemas"]["DeliveryState"];
+            /**
+             * Format: int64
+             * @description Runs still pushed, accepted or in flight on this key.
+             */
+            open: number;
+            /**
+             * Format: int64
+             * @description Attempts beyond the first, across the recent runs.
+             */
+            retried_attempts: number;
+            runner_name: string;
+            /**
+             * Format: int64
+             * @description Recent runs this key received a delivery for.
+             */
+            runs: number;
+            /**
+             * Format: int64
+             * @description Of those, runs whose last attempt reported ok.
+             */
+            succeeded: number;
+            /** Format: uuid */
+            worker_api_key_id: string;
+        };
         /** @description What a runner declares about its connection in `announce`. */
         RunnerAnnouncement: {
             /**
              * Format: int32
-             * @description Maximum concurrent work this session accepts; it must be positive.
+             * @description Maximum concurrent work this session accepts; it must be positive. Omitted values default to 1 for compatibility with older runners.
              */
-            concurrency_capacity: number;
+            concurrency_capacity?: number;
             /**
              * @description Optional human-readable name shown to the owner; a supplied value is
              *     non-blank and at most 128 bytes long.
@@ -1135,6 +1449,8 @@ export interface components {
             sessions: components["schemas"]["RunnerCapabilitySession"][];
         };
         RunnerCapabilitySession: {
+            /** @description Optional human-readable name the runner announced for itself. */
+            display_name?: string | null;
             handler_keys: components["schemas"]["RunnerHandlerKey"][];
             /**
              * @description True when this session is legacy, lacks a handler announced by a peer,
@@ -1148,6 +1464,8 @@ export interface components {
             session_id: string;
             /** Format: uuid */
             worker_api_key_id: string;
+            /** @description Name the owner gave the worker API key that authenticated this session. */
+            worker_api_key_name: string;
         };
         /**
          * @description Stable, validated name of a runner handler.  Handler keys are durable job
@@ -1345,6 +1663,110 @@ export interface components {
         };
         /** @enum {string} */
         UsageBucket: "day" | "week" | "month";
+        /**
+         * @description One outbound request of a webhook run: when it was made and how it ended.
+         *     Never carries the URL, a header or signing value, or error text from the
+         *     HTTP stack; the only free text is the response excerpt, which is present
+         *     only while the job opts in to keeping one.
+         */
+        WebhookAttemptResponse: {
+            attempt: components["schemas"]["DeliveryAttempt"];
+            /**
+             * Format: uuid
+             * @description The `Tron-Delivery-Id` the receiver saw. It is the run's id and is the
+             *     same on every attempt of the run, so a receiver can de-duplicate.
+             */
+            delivery_id: string;
+            /** Format: int32 */
+            duration_ms?: number | null;
+            failure_kind?: null | components["schemas"]["RunFailureKind"];
+            /** Format: date-time */
+            finished_at?: string | null;
+            /**
+             * Format: int32
+             * @description The HTTP status the receiver answered with, when it answered at all.
+             */
+            http_status_code?: number | null;
+            /**
+             * @description A bounded, redacted piece of the response body. Absent unless the job
+             *     currently opts in to recording one.
+             */
+            response_excerpt?: string | null;
+            /**
+             * Format: date-time
+             * @description When the next attempt was scheduled, if this one earned a retry.
+             */
+            retry_due_at?: string | null;
+            /** Format: date-time */
+            started_at: string;
+            status: components["schemas"]["WebhookAttemptStatus"];
+        };
+        /** @enum {string} */
+        WebhookAttemptStatus: "running" | "succeeded" | "failed";
+        WebhookConfigurationRequest: {
+            body_template?: string | null;
+            headers?: components["schemas"]["WebhookHeaderRequest"][];
+        };
+        WebhookConfigurationResponse: {
+            body_template?: string | null;
+            headers: components["schemas"]["WebhookHeaderResponse"][];
+        };
+        /**
+         * @description Meaning of the stable delivery identifier.
+         * @enum {string}
+         */
+        WebhookDeliveryIdentity: "run_id";
+        WebhookHeaderRequest: {
+            name: string;
+            value: string;
+            visibility: components["schemas"]["WebhookHeaderVisibility"];
+        };
+        WebhookHeaderResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            public_value?: string | null;
+            visibility: components["schemas"]["WebhookHeaderVisibility"];
+        };
+        /** @enum {string} */
+        WebhookHeaderVisibility: "public" | "secret";
+        /** @description The body POSTed to a webhook that has no body template configured. */
+        WebhookPayload: {
+            /** Format: uuid */
+            job_id: string;
+            /** Format: uuid */
+            run_id: string;
+            /** Format: date-time */
+            scheduled_for: string;
+            trigger: components["schemas"]["RunTrigger"];
+        };
+        /**
+         * @description Algorithm used to authenticate webhook deliveries.
+         * @enum {string}
+         */
+        WebhookSignatureAlgorithm: "hmac_sha256";
+        /**
+         * @description Wire encoding of each member in `Tron-Signature`.
+         * @enum {string}
+         */
+        WebhookSignatureEncoding: "v1_lowercase_hex";
+        /**
+         * @description Canonical, server-generated example of the exact bytes and headers a
+         *     receiver verifies. The fixture values live here so clients cannot drift
+         *     from the real serializer, signer, or header vocabulary.
+         */
+        WebhookSignatureVerificationResponse: {
+            algorithm: components["schemas"]["WebhookSignatureAlgorithm"];
+            body: string;
+            delivery_id: components["schemas"]["WebhookVerificationHeader"];
+            delivery_identity: components["schemas"]["WebhookDeliveryIdentity"];
+            secret: string;
+            signature: components["schemas"]["WebhookVerificationHeader"];
+            signature_encoding: components["schemas"]["WebhookSignatureEncoding"];
+            signature_member_separator: string;
+            signed_value_separator: string;
+            timestamp: components["schemas"]["WebhookVerificationHeader"];
+        };
         /** @enum {string} */
         WebhookSigningPurpose: "delivery_hmac_sha256";
         /** @description Redacted delivery-HMAC signing-secret version metadata. It never contains plaintext. */
@@ -1365,6 +1787,10 @@ export interface components {
          * @enum {string}
          */
         WebhookSigningSecretStatus: "future" | "active" | "expired";
+        WebhookVerificationHeader: {
+            name: string;
+            value: string;
+        };
         /** @description Body of `POST /api/worker-api-keys`. */
         WorkerApiKeyRequest: {
             /** @description A label for the owner to recognise the worker by; not secret. */
@@ -2040,7 +2466,10 @@ export interface operations {
     restoreJob: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
             path: {
                 /** @description Job id */
                 job_id: string;
@@ -2065,6 +2494,18 @@ export interface operations {
                 };
                 content?: never;
             };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2084,6 +2525,92 @@ export interface operations {
             };
             /** @description The database is unavailable */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    getJobRunnerActivity: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What each runner key did with the job's most recent runs: per runner, how many runs ended ok, err or undelivered, how many are still open, and the latest attempt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRunnerActivityResponse"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description The database is unavailable */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2775,6 +3302,98 @@ export interface operations {
             };
         };
     };
+    sendWebhookTestEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A test delivery with trigger `test` was created and is pending; the webhook executor sends it through the same signed request path as any delivery, and its attempts appear on the run listing */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRunResponse"];
+                };
+            };
+            /** @description The job is not a webhook job */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description The job is deleted; restore it first */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description The database is unavailable */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
     getMe: {
         parameters: {
             query?: never;
@@ -2960,6 +3579,53 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    getWebhookSignatureVerification: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Canonical webhook signature verification vector */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSignatureVerificationResponse"];
+                };
             };
             /**
              * @description The caller is not an active member of the organization named by

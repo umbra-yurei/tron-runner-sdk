@@ -825,6 +825,15 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
           }
         ],
         "responses": {
@@ -840,6 +849,16 @@
           },
           "401": {
             "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
           },
           "404": {
             "description": "",
@@ -870,8 +889,110 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/runner-activity": {
+      "get": {
+        "tags": [],
+        "operationId": "getJobRunnerActivity",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What each runner key did with the job's most recent runs: per runner, how many runs ended ok, err or undelivered, how many are still open, and the latest attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunnerActivityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
       }
     },
     "/api/jobs/{job_id}/runs": {
@@ -1746,6 +1867,113 @@
         ]
       }
     },
+    "/api/jobs/{job_id}/webhook-test-events": {
+      "post": {
+        "tags": [],
+        "operationId": "sendWebhookTestEvent",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "description": "Job id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "A test delivery with trigger `test` was created and is pending; the webhook executor sends it through the same signed request path as any delivery, and its attempts appear on the run listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The job is not a webhook job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The job is deleted; restore it first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The database is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
     "/api/me": {
       "get": {
         "tags": [],
@@ -1954,6 +2182,60 @@
           },
           "401": {
             "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Membership of the named organization could not be determined, so the\nrequest was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "zitadel_bearer": []
+          }
+        ]
+      }
+    },
+    "/api/webhook-signature-verification": {
+      "get": {
+        "tags": [],
+        "operationId": "getWebhookSignatureVerification",
+        "parameters": [
+          {
+            "name": "x-cruma-org",
+            "in": "header",
+            "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/OrgId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canonical webhook signature verification vector",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSignatureVerificationResponse"
+                }
+              }
+            }
           },
           "403": {
             "description": "The caller is not an active member of the organization named by\nX-Cruma-Org, or is a service principal, which gets no organization access",
@@ -2634,11 +2916,15 @@
           "org_membership_unavailable",
           "tron_feature_disabled",
           "tron_feature_unavailable",
+          "mcp_unavailable",
+          "invalid_mcp_request",
+          "unknown_mcp_tool",
           "invalid_job_configuration",
           "blocked_webhook_target",
           "invalid_worker_api_key_request",
           "invalid_admin_usage_range",
           "admin_scope_counts_too_large",
+          "test_event_needs_webhook_job",
           "invalid_run_search",
           "invalid_timing_range",
           "timing_range_too_large",
@@ -2656,6 +2942,30 @@
           "dev",
           "oidc"
         ]
+      },
+      "ConnectedSessionIdentity": {
+        "type": "object",
+        "description": "What a connected runner announced about itself. Every field is the\nrunner's own claim and optional; a runner that never announced has none.",
+        "properties": {
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runner_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sdk_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       },
       "CreatedWorkerApiKeyResponse": {
         "type": "object",
@@ -2681,6 +2991,11 @@
           "ready",
           "unavailable"
         ]
+      },
+      "DeliveryAttempt": {
+        "type": "integer",
+        "format": "int32",
+        "description": "Which attempt of a run's delivery slot a delivery row is. The first push is\nattempt 1; each retry is the previous attempt plus one."
       },
       "DeliveryMode": {
         "type": "string",
@@ -2933,11 +3248,25 @@
           "name": {
             "type": "string"
           },
+          "retry_policy": {
+            "$ref": "#/components/schemas/RetryPolicy",
+            "description": "Attempts, backoff and retryable failures for runner deliveries. Omitted\nmeans no retries."
+          },
           "schedule": {
             "$ref": "#/components/schemas/JobSchedule"
           },
           "target": {
             "$ref": "#/components/schemas/JobTarget"
+          },
+          "webhook_configuration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WebhookConfigurationRequest"
+              }
+            ]
           }
         }
       },
@@ -2955,6 +3284,7 @@
           "miss_grace_window",
           "effective_miss_grace_seconds",
           "delivery_mode",
+          "retry_policy",
           "visibility",
           "public_id",
           "created_at",
@@ -3022,6 +3352,9 @@
             "format": "uuid",
             "description": "The identifier of the job's public page. It identifies the job to the\npublic only while `visibility` is `public`."
           },
+          "retry_policy": {
+            "$ref": "#/components/schemas/RetryPolicy"
+          },
           "schedule": {
             "$ref": "#/components/schemas/JobSchedule"
           },
@@ -3035,6 +3368,16 @@
           "visibility": {
             "$ref": "#/components/schemas/JobVisibility",
             "description": "Whether anyone holding the public URL can read the job's status."
+          },
+          "webhook_configuration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WebhookConfigurationResponse"
+              }
+            ]
           }
         }
       },
@@ -3083,6 +3426,13 @@
           "deliveries"
         ],
         "properties": {
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookAttemptResponse"
+            },
+            "description": "Each outbound request a webhook run made, oldest first. Only on\nresponses about one of the caller's own jobs. Empty for runner runs,\nfor runs not yet claimed, and for runs that pre-date the attempt ledger\n(read those from the run's own `status`, `failure_kind`,\n`http_status_code` and `delivery_duration_ms`)."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time"
@@ -3113,7 +3463,7 @@
               },
               {
                 "$ref": "#/components/schemas/RunFailureKind",
-                "description": "How a failed or timed-out run went wrong. Each run is attempted once;\nthere are no retries."
+                "description": "How a failed or timed-out run went wrong."
               }
             ]
           },
@@ -3162,6 +3512,17 @@
           "status": {
             "$ref": "#/components/schemas/RunStatus"
           },
+          "status_derivation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatusDerivation",
+                "description": "How the run's status follows from its deliveries under the job's\ndelivery mode. Absent for runs with no delivery (see `status_reason`),\nand on responses that are not about one of the caller's jobs."
+              }
+            ]
+          },
           "status_reason": {
             "oneOf": [
               {
@@ -3179,6 +3540,28 @@
           },
           "trigger": {
             "$ref": "#/components/schemas/RunTrigger"
+          }
+        }
+      },
+      "JobRunnerActivityResponse": {
+        "type": "object",
+        "description": "Body of `GET /api/jobs/{job_id}/runner-activity`.",
+        "required": [
+          "window_runs",
+          "runners"
+        ],
+        "properties": {
+          "runners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunnerActivityResponse"
+            },
+            "description": "Ordered by runner name. Empty for a job whose recent runs reached no runner."
+          },
+          "window_runs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "How many of the job's newest runs were examined; at most\n[`RECENT_RUN_COUNT`]."
           }
         }
       },
@@ -3330,9 +3713,22 @@
             "required": [
               "session_id",
               "worker_api_key_id",
+              "concurrency_capacity",
+              "current_load",
               "kind"
             ],
             "properties": {
+              "concurrency_capacity": {
+                "type": "integer",
+                "format": "int32",
+                "description": "Effective compatibility capacity for this release.",
+                "minimum": 0
+              },
+              "current_load": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Durable unfinished deliveries assigned to this session."
+              },
               "kind": {
                 "type": "string",
                 "enum": [
@@ -3359,6 +3755,7 @@
               "worker_api_key_id",
               "handler_keys",
               "concurrency_capacity",
+              "current_load",
               "kind"
             ],
             "properties": {
@@ -3367,6 +3764,11 @@
                 "format": "int32",
                 "description": "Positive maximum number of concurrent deliveries this session accepts.",
                 "minimum": 0
+              },
+              "current_load": {
+                "type": "integer",
+                "format": "int64",
+                "description": "Durable unfinished deliveries assigned to this session."
               },
               "display_name": {
                 "type": [
@@ -3566,6 +3968,7 @@
           "runner_socket_path",
           "runner_authentication_timeout_seconds",
           "miss_grace_window",
+          "retry_policy_window",
           "compatibility_handler_key",
           "runner_result_message_limit_bytes"
         ],
@@ -3593,6 +3996,10 @@
           },
           "mode": {
             "$ref": "#/components/schemas/AuthMode"
+          },
+          "retry_policy_window": {
+            "$ref": "#/components/schemas/RetryPolicyWindow",
+            "description": "Server-owned retry-policy bounds and default used by the generated job editor."
           },
           "runner_authentication_timeout_seconds": {
             "type": "integer",
@@ -3834,6 +4241,130 @@
         ],
         "description": "Why `report` was rejected."
       },
+      "RetryBackoff": {
+        "type": "string",
+        "enum": [
+          "fixed",
+          "exponential"
+        ]
+      },
+      "RetryPolicy": {
+        "type": "object",
+        "required": [
+          "max_attempts",
+          "backoff_seconds",
+          "backoff",
+          "max_backoff_seconds",
+          "on_err",
+          "on_accept_timeout",
+          "on_disconnect",
+          "on_network_error",
+          "on_timeout",
+          "on_retryable_status",
+          "on_interrupted",
+          "record_response_excerpt",
+          "response_excerpt_max_bytes"
+        ],
+        "properties": {
+          "backoff": {
+            "$ref": "#/components/schemas/RetryBackoff",
+            "description": "Whether the wait stays at the base or doubles per attempt."
+          },
+          "backoff_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Seconds to wait after the first failed attempt; the base the backoff\nkind grows from."
+          },
+          "max_attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Total attempts per run, the first one included. 1 means no retries."
+          },
+          "max_backoff_seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The longest wait between two attempts, whichever backoff kind is used."
+          },
+          "on_accept_timeout": {
+            "type": "boolean",
+            "description": "Runner jobs: retry when a pushed delivery is not accepted in time."
+          },
+          "on_disconnect": {
+            "type": "boolean",
+            "description": "Runner jobs: treat a runner disconnecting mid-run as a failed attempt\nand retry it."
+          },
+          "on_err": {
+            "type": "boolean",
+            "description": "Runner jobs: retry when the runner reports `Err`."
+          },
+          "on_interrupted": {
+            "type": "boolean",
+            "description": "Webhook jobs: re-send an attempt whose outcome is unknown because Tron\nstopped while the request was in flight. Only safe when the receiver\ndeduplicates on `Tron-Delivery-Id`, so it is an explicit opt-in; without\nit such a run stays failed and is never re-sent."
+          },
+          "on_network_error": {
+            "type": "boolean",
+            "description": "Webhook jobs: retry when the request could not reach the receiver or\nthe connection broke before a response."
+          },
+          "on_retryable_status": {
+            "type": "boolean",
+            "description": "Webhook jobs: retry on a 5xx, 408 or 429 answer. A `Retry-After` header\non the answer is honoured when it still fits the run's window."
+          },
+          "on_timeout": {
+            "type": "boolean",
+            "description": "Webhook jobs: retry when the receiver does not answer in time."
+          },
+          "record_response_excerpt": {
+            "type": "boolean",
+            "description": "Webhook jobs: keep a bounded, redacted excerpt of each response body\non its attempt record. Off means no response body is ever stored."
+          },
+          "response_excerpt_max_bytes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Webhook jobs: the most bytes of response body an excerpt keeps."
+          }
+        }
+      },
+      "RetryPolicyWindow": {
+        "type": "object",
+        "description": "The server-owned bounds and default for a job's retry policy. Published\nthrough the public config so the editor never copies these numbers.",
+        "required": [
+          "minimum_attempts",
+          "maximum_attempts",
+          "maximum_backoff_seconds",
+          "maximum_response_excerpt_bytes",
+          "default_policy"
+        ],
+        "properties": {
+          "default_policy": {
+            "$ref": "#/components/schemas/RetryPolicy",
+            "description": "The policy a new job starts with: one attempt, no retries."
+          },
+          "maximum_attempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximum_backoff_seconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maximum_response_excerpt_bytes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minimum_attempts": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RetryableFailure": {
+        "type": "string",
+        "enum": [
+          "runner_err",
+          "accept_timeout",
+          "disconnected"
+        ]
+      },
       "RevealedWebhookSigningSecretResponse": {
         "type": "object",
         "description": "One-time create/rotate response. Copy `secret` immediately: later reads expose only metadata.",
@@ -3868,6 +4399,8 @@
         "required": [
           "id",
           "runner_name",
+          "runner_session_id",
+          "attempt",
           "state",
           "pushed_at",
           "accept_deadline",
@@ -3885,6 +4418,32 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "attempt": {
+            "$ref": "#/components/schemas/DeliveryAttempt",
+            "description": "Which attempt of its delivery slot this push is. Rows written before\nretries existed read as attempt 1."
+          },
+          "connected_session": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConnectedSessionIdentity",
+                "description": "What that runner announced about itself, while its connection is still\nopen. Absent once it has disconnected: Tron keeps no announcement\nbeyond the connection."
+              }
+            ]
+          },
+          "failure": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RetryableFailure",
+                "description": "Why the attempt failed, when the failure is one a retry policy can\nselect. Absent on rows written before retries existed."
+              }
+            ]
           },
           "finished_at": {
             "type": [
@@ -3922,13 +4481,34 @@
             ],
             "description": "The message the runner sent with its `Ok`/`Err` report, once it has."
           },
+          "previous_delivery_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The failed attempt this push retries; absent on first attempts."
+          },
           "pushed_at": {
             "type": "string",
             "format": "date-time"
           },
+          "retry_due_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the retry of this failed attempt is due. Present only until that\nretry is pushed or abandoned."
+          },
           "runner_name": {
             "type": "string",
             "description": "Name of the worker API key whose runner received the push."
+          },
+          "runner_session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The runner connection the push went to. Retained with the delivery, so\nevery row has one, including rows written before retries existed."
           },
           "state": {
             "$ref": "#/components/schemas/DeliveryState"
@@ -4011,6 +4591,97 @@
           "failed_to_deliver"
         ]
       },
+      "RunStatusDerivation": {
+        "type": "object",
+        "description": "How a runner run's status follows from the job's delivery mode and the\nrun's deliveries. Computed with the dispatcher's own settlement rule from\nthe job's CURRENT configuration, so it can disagree with `status` when the\ndelivery mode changed after the run ended or the run was cancelled.",
+        "required": [
+          "mode",
+          "required_successes",
+          "completed_successes",
+          "failed_slots",
+          "undelivered_slots",
+          "retry_scheduled_slots",
+          "open_slots",
+          "terminal_attempts",
+          "open_attempts",
+          "max_attempts",
+          "verdict"
+        ],
+        "properties": {
+          "completed_successes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Delivery slots whose last attempt reported `ok`.",
+            "minimum": 0
+          },
+          "failed_slots": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Slots whose last attempt failed, with no retry left or selected.",
+            "minimum": 0
+          },
+          "max_attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Attempts the job's retry policy allows per slot, the first included.",
+            "minimum": 0
+          },
+          "mode": {
+            "$ref": "#/components/schemas/JobDeliveryMode",
+            "description": "The job's current delivery mode."
+          },
+          "open_attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Attempts, across all slots, that have not finished.",
+            "minimum": 0
+          },
+          "open_slots": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Slots whose last attempt is still pushed, accepted or in flight.",
+            "minimum": 0
+          },
+          "required_successes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "`ok` reports the run needs to succeed.",
+            "minimum": 0
+          },
+          "retry_scheduled_slots": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Slots whose last attempt failed and whose retry is scheduled.",
+            "minimum": 0
+          },
+          "settled_status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatus",
+                "description": "The status the settlement rule gives now; `None` while the run waits."
+              }
+            ]
+          },
+          "terminal_attempts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Attempts, across all slots, that have finished.",
+            "minimum": 0
+          },
+          "undelivered_slots": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Slots whose last attempt was never accepted, with no retry left or\nselected.",
+            "minimum": 0
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/RunVerdict"
+          }
+        }
+      },
       "RunStatusReason": {
         "type": "string",
         "enum": [
@@ -4064,21 +4735,115 @@
         "type": "string",
         "enum": [
           "scheduled",
-          "manual"
+          "manual",
+          "test"
         ]
+      },
+      "RunVerdict": {
+        "type": "string",
+        "description": "Where the settlement rule stands for a run's current delivery slots.",
+        "enum": [
+          "in_progress",
+          "awaiting_retry",
+          "threshold_met",
+          "threshold_missed",
+          "nothing_accepted"
+        ]
+      },
+      "RunnerActivityResponse": {
+        "type": "object",
+        "description": "One runner key's share of the job's recent runs.",
+        "required": [
+          "worker_api_key_id",
+          "runner_name",
+          "runs",
+          "succeeded",
+          "failed",
+          "failed_to_deliver",
+          "open",
+          "retried_attempts",
+          "last_pushed_at",
+          "last_state"
+        ],
+        "properties": {
+          "failed": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Runs whose last attempt reported err."
+          },
+          "failed_to_deliver": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Runs whose last attempt was never accepted."
+          },
+          "last_failure": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RetryableFailure",
+                "description": "Why the key's latest attempt failed, when a retry policy could select it."
+              }
+            ]
+          },
+          "last_outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunOutcomeKind"
+              }
+            ]
+          },
+          "last_pushed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_state": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "open": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Runs still pushed, accepted or in flight on this key."
+          },
+          "retried_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Attempts beyond the first, across the recent runs."
+          },
+          "runner_name": {
+            "type": "string"
+          },
+          "runs": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Recent runs this key received a delivery for."
+          },
+          "succeeded": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Of those, runs whose last attempt reported ok."
+          },
+          "worker_api_key_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "RunnerAnnouncement": {
         "type": "object",
         "description": "What a runner declares about its connection in `announce`.",
         "required": [
-          "handler_keys",
-          "concurrency_capacity"
+          "handler_keys"
         ],
         "properties": {
           "concurrency_capacity": {
             "type": "integer",
             "format": "int32",
-            "description": "Maximum concurrent work this session accepts; it must be positive.",
+            "description": "Maximum concurrent work this session accepts; it must be positive. Omitted values default to 1 for compatibility with older runners.",
             "minimum": 0
           },
           "display_name": {
@@ -4155,10 +4920,18 @@
         "required": [
           "session_id",
           "worker_api_key_id",
+          "worker_api_key_name",
           "handler_keys",
           "out_of_date"
         ],
         "properties": {
+          "display_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional human-readable name the runner announced for itself."
+          },
           "handler_keys": {
             "type": "array",
             "items": {
@@ -4198,6 +4971,10 @@
           "worker_api_key_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "worker_api_key_name": {
+            "type": "string",
+            "description": "Name the owner gave the worker API key that authenticated this session."
           }
         }
       },
@@ -4663,6 +5440,274 @@
           "month"
         ]
       },
+      "WebhookAttemptResponse": {
+        "type": "object",
+        "description": "One outbound request of a webhook run: when it was made and how it ended.\nNever carries the URL, a header or signing value, or error text from the\nHTTP stack; the only free text is the response excerpt, which is present\nonly while the job opts in to keeping one.",
+        "required": [
+          "delivery_id",
+          "attempt",
+          "status",
+          "started_at"
+        ],
+        "properties": {
+          "attempt": {
+            "$ref": "#/components/schemas/DeliveryAttempt"
+          },
+          "delivery_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The `Tron-Delivery-Id` the receiver saw. It is the run's id and is the\nsame on every attempt of the run, so a receiver can de-duplicate."
+          },
+          "duration_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "failure_kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunFailureKind",
+                "description": "How a failed attempt went wrong."
+              }
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "http_status_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The HTTP status the receiver answered with, when it answered at all."
+          },
+          "response_excerpt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A bounded, redacted piece of the response body. Absent unless the job\ncurrently opts in to recording one."
+          },
+          "retry_due_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the next attempt was scheduled, if this one earned a retry."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WebhookAttemptStatus"
+          }
+        }
+      },
+      "WebhookAttemptStatus": {
+        "type": "string",
+        "enum": [
+          "running",
+          "succeeded",
+          "failed"
+        ]
+      },
+      "WebhookConfigurationRequest": {
+        "type": "object",
+        "properties": {
+          "body_template": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookHeaderRequest"
+            }
+          }
+        }
+      },
+      "WebhookConfigurationResponse": {
+        "type": "object",
+        "required": [
+          "headers"
+        ],
+        "properties": {
+          "body_template": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookHeaderResponse"
+            }
+          }
+        }
+      },
+      "WebhookDeliveryIdentity": {
+        "type": "string",
+        "description": "Meaning of the stable delivery identifier.",
+        "enum": [
+          "run_id"
+        ]
+      },
+      "WebhookHeaderRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "visibility",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/WebhookHeaderVisibility"
+          }
+        }
+      },
+      "WebhookHeaderResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "visibility"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "public_value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/WebhookHeaderVisibility"
+          }
+        }
+      },
+      "WebhookHeaderVisibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "secret"
+        ]
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "description": "The body POSTed to a webhook that has no body template configured.",
+        "required": [
+          "run_id",
+          "job_id",
+          "scheduled_for",
+          "trigger"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/RunTrigger"
+          }
+        }
+      },
+      "WebhookSignatureAlgorithm": {
+        "type": "string",
+        "description": "Algorithm used to authenticate webhook deliveries.",
+        "enum": [
+          "hmac_sha256"
+        ]
+      },
+      "WebhookSignatureEncoding": {
+        "type": "string",
+        "description": "Wire encoding of each member in `Tron-Signature`.",
+        "enum": [
+          "v1_lowercase_hex"
+        ]
+      },
+      "WebhookSignatureVerificationResponse": {
+        "type": "object",
+        "description": "Canonical, server-generated example of the exact bytes and headers a\nreceiver verifies. The fixture values live here so clients cannot drift\nfrom the real serializer, signer, or header vocabulary.",
+        "required": [
+          "secret",
+          "body",
+          "timestamp",
+          "signature",
+          "delivery_id",
+          "algorithm",
+          "signature_encoding",
+          "delivery_identity",
+          "signed_value_separator",
+          "signature_member_separator"
+        ],
+        "properties": {
+          "algorithm": {
+            "$ref": "#/components/schemas/WebhookSignatureAlgorithm"
+          },
+          "body": {
+            "type": "string"
+          },
+          "delivery_id": {
+            "$ref": "#/components/schemas/WebhookVerificationHeader"
+          },
+          "delivery_identity": {
+            "$ref": "#/components/schemas/WebhookDeliveryIdentity"
+          },
+          "secret": {
+            "type": "string"
+          },
+          "signature": {
+            "$ref": "#/components/schemas/WebhookVerificationHeader"
+          },
+          "signature_encoding": {
+            "$ref": "#/components/schemas/WebhookSignatureEncoding"
+          },
+          "signature_member_separator": {
+            "type": "string"
+          },
+          "signed_value_separator": {
+            "type": "string"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/WebhookVerificationHeader"
+          }
+        }
+      },
       "WebhookSigningPurpose": {
         "type": "string",
         "enum": [
@@ -4715,6 +5760,21 @@
           "active",
           "expired"
         ]
+      },
+      "WebhookVerificationHeader": {
+        "type": "object",
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
       },
       "WorkerApiKeyRequest": {
         "type": "object",

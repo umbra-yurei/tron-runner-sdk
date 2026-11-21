@@ -414,8 +414,9 @@ func (r *Runner) announcement() *generated.AnnounceFrame {
 	sort.Strings(keys)
 	version := generated.RunnerProtocolVersion(generated.ProtocolVersion)
 	sdkVersion := SDKVersion
+	capacity := int64(r.cfg.Capacity)
 	announcement := generated.RunnerAnnouncement{
-		ConcurrencyCapacity: int64(r.cfg.Capacity),
+		ConcurrencyCapacity: &capacity,
 		HandlerKeys:         keys,
 		ProtocolVersion:     &version,
 		SDKVersion:          &sdkVersion,

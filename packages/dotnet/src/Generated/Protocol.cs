@@ -177,10 +177,12 @@ namespace Cruma.Tron.Runner.Generated
     public partial class RunnerAnnouncement
     {
         /// <summary>
-        /// Maximum concurrent work this session accepts; it must be positive.
+        /// Maximum concurrent work this session accepts; it must be positive. Omitted values default
+        /// to 1 for compatibility with older runners.
         /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("concurrency_capacity")]
-        public long ConcurrencyCapacity { get; set; }
+        public long? ConcurrencyCapacity { get; set; }
 
         /// <summary>
         /// Optional human-readable name shown to the owner; a supplied value is

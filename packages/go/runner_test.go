@@ -141,8 +141,8 @@ func newFakeRunnerHelper(ctx context.Context, ws *websocket.Conn, options fakeRu
 		}
 	}
 
-	if announce.Announcement.ConcurrencyCapacity != int64(options.ExpectCapacity) {
-		return nil, fmt.Errorf("unexpected capacity: got %d, want %d", announce.Announcement.ConcurrencyCapacity, options.ExpectCapacity)
+	if got := announce.Announcement.ConcurrencyCapacity; got == nil || *got != int64(options.ExpectCapacity) {
+		return nil, fmt.Errorf("unexpected capacity: got %v, want %d", got, options.ExpectCapacity)
 	}
 
 	// Send announced

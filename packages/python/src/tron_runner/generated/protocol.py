@@ -341,13 +341,14 @@ class RunnerProtocolVersion(Enum):
 class RunnerAnnouncement:
     """What a runner declares about its connection in `announce`."""
 
-    concurrency_capacity: int
-    """Maximum concurrent work this session accepts; it must be positive."""
-
     handler_keys: List[str]
     """Stable handler keys the runner can execute. The set must contain 1 to
     128 unique keys, each 1–128 bytes and matching
     `[A-Za-z0-9][A-Za-z0-9_.-]*`.
+    """
+    concurrency_capacity: Optional[int] = None
+    """Maximum concurrent work this session accepts; it must be positive. Omitted values default
+    to 1 for compatibility with older runners.
     """
     display_name: Optional[str] = None
     """Optional human-readable name shown to the owner; a supplied value is
@@ -367,18 +368,19 @@ class RunnerAnnouncement:
     @staticmethod
     def from_dict(obj: Any) -> 'RunnerAnnouncement':
         assert isinstance(obj, dict)
-        concurrency_capacity = from_int(obj.get("concurrency_capacity"))
         handler_keys = from_list(from_str, obj.get("handler_keys"))
+        concurrency_capacity = from_union([from_int, from_none], obj.get("concurrency_capacity"))
         display_name = from_union([from_none, from_str], obj.get("display_name"))
         protocol_version = from_union([from_none, RunnerProtocolVersion], obj.get("protocol_version"))
         runner_version = from_union([from_none, from_str], obj.get("runner_version"))
         sdk_version = from_union([from_none, from_str], obj.get("sdk_version"))
-        return RunnerAnnouncement(concurrency_capacity, handler_keys, display_name, protocol_version, runner_version, sdk_version)
+        return RunnerAnnouncement(handler_keys, concurrency_capacity, display_name, protocol_version, runner_version, sdk_version)
 
     def to_dict(self) -> dict:
         result: dict = {}
-        result["concurrency_capacity"] = from_int(self.concurrency_capacity)
         result["handler_keys"] = from_list(from_str, self.handler_keys)
+        if self.concurrency_capacity is not None:
+            result["concurrency_capacity"] = from_union([from_int, from_none], self.concurrency_capacity)
         if self.display_name is not None:
             result["display_name"] = from_union([from_none, from_str], self.display_name)
         if self.protocol_version is not None:

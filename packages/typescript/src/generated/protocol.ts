@@ -164,9 +164,10 @@ export interface AnnounceFrame {
  */
 export interface RunnerAnnouncement {
     /**
-     * Maximum concurrent work this session accepts; it must be positive.
+     * Maximum concurrent work this session accepts; it must be positive. Omitted values default
+     * to 1 for compatibility with older runners.
      */
-    concurrency_capacity: number;
+    concurrency_capacity?: number;
     /**
      * Optional human-readable name shown to the owner; a supplied value is
      * non-blank and at most 128 bytes long.
@@ -1213,7 +1214,7 @@ const typeMap: any = {
         { json: "type", js: "type", typ: r("AnnounceFrameType") },
     ], "any"),
     "RunnerAnnouncement": o([
-        { json: "concurrency_capacity", js: "concurrency_capacity", typ: 0 },
+        { json: "concurrency_capacity", js: "concurrency_capacity", typ: u(undefined, 0) },
         { json: "display_name", js: "display_name", typ: u(undefined, u(null, "")) },
         { json: "handler_keys", js: "handler_keys", typ: a("") },
         { json: "protocol_version", js: "protocol_version", typ: u(undefined, u(r("RunnerProtocolVersion"), null)) },
