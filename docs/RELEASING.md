@@ -6,17 +6,29 @@ GitHub Actions through trusted publishing and has no stored key.
 
 ## Before tagging
 
-1. `main` is green: `npm ci && npm run check`, each package's own build and tests, and `npm run conformance` against a
-   running Tron (see [`conformance/README.md`](../conformance/README.md)). Do not publish a package whose generated-schema
-   or conformance check is red.
-2. `npm run check:protocol` shows `protocol/` has not drifted from the Tron you are releasing against.
-3. The version is the same in every manifest, and `RELEASES.md` lists it with the protocol version it supports:
+1. `main` is green: `npm ci && npm run check` and each package's own build and tests.
+2. **The release conformance gate passes, and it is mandatory.** From a clean checkout of the release commit, run
+   ```sh
+   npm ci && npm run conformance:release
+   ```
+   It packs every SDK from that commit (`.crate`, `.tgz`, wheel, `.nupkg`, Go module zip), starts the pinned Tron and
+   Postgres in containers with no setup beyond `podman`, fronts Tron with a TLS terminator whose throwaway CA the SDKs
+   trust through their normal trust hooks, and runs the whole conformance suite over `wss://` against adapters built
+   from those packed artifacts, not from the source tree. It exits non-zero on any failure, and on anything that stops
+   it finishing.
+   **A skipped, partial (`--only`, `--scenario`) or failed run means no publish.** "It needs a live Tron" is not a
+   reason to skip it: the command starts its own. Paste its closing line (`release conformance passed: ...`) and the
+   release commit it printed on the release task's thread. This exists because `cruma-tron-runner` 0.1.0 shipped
+   panicking on every `wss://` connect, which a plain `ws://` run cannot see. Details, the Tron pin and how to bump
+   it: [`conformance/README.md`](../conformance/README.md#release-gate).
+3. `npm run check:protocol` shows `protocol/` has not drifted from the Tron you are releasing against.
+4. The version is the same in every manifest, and `RELEASES.md` lists it with the protocol version it supports:
    - `packages/rust/Cargo.toml` (`version`)
    - `packages/typescript/package.json` (`version`)
    - `packages/python/src/tron_runner/_version.py` (`__version__`)
    - `packages/dotnet/src/Cruma.Tron.Runner.csproj` (`<Version>`)
    - `packages/go/version.go` (`SDKVersion`)
-4. Each registry accepts the artifact (nothing is uploaded):
+5. Each registry accepts the artifact (nothing is uploaded):
    - `cd packages/rust && cargo publish --dry-run --locked`
    - `cd packages/typescript && npm pack --dry-run`
    - `cd packages/python && python -m build` (needs `pip install -e '.[dev]'`)
@@ -24,7 +36,8 @@ GitHub Actions through trusted publishing and has no stored key.
 
 ## Publishing
 
-Run these from a clean checkout of the release commit, in this order, and stop at the first failure. A published
+Run these from a clean checkout of the release commit, only after the release conformance gate above passed for that
+commit, in this order, and stop at the first failure. A published
 version cannot be replaced; a bad release is fixed by the next patch version.
 
 | Registry | Command | Credential |

@@ -181,7 +181,7 @@ export async function stageGo(context: StageContext): Promise<StagedSdk> {
   mkdirSync(adapter);
   cpSync(join(tree, "packages/go/conformance/adapter/main.go"), join(adapter, "main.go"));
   writeFileSync(join(adapter, "go.mod"), `module tron-release-conformance/go-adapter\n\ngo 1.23\n\nrequire ${GO_SDK_MODULE} ${GO_PROXY_VERSION}\n`);
-  const env = { GOPROXY: `file://${proxy},https://proxy.golang.org,direct`, GOSUMDB: "off", GOMODCACHE: modcache, GOFLAGS: "-mod=mod" };
+  const env = { GOPROXY: `file://${proxy},https://proxy.golang.org,direct`, GOSUMDB: "off", GOMODCACHE: modcache, GOFLAGS: "-mod=mod -modcacherw" };
   await steps.run("go-adapter-tidy", ["go", "mod", "tidy"], { cwd: adapter, env });
   const binary = join(work, "conformance-adapter");
   await steps.run("go-adapter-build", ["go", "build", "-o", binary, "."], { cwd: adapter, env });

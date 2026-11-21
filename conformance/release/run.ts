@@ -107,7 +107,7 @@ async function main(runId: string, work: string): Promise<number> {
     const harnessArguments = ["--registry", registry];
     const scenario = argument("scenario");
     if (scenario !== undefined) harnessArguments.push("--scenario", scenario);
-    return await runHarness(harnessArguments, {
+    const code = await runHarness(harnessArguments, {
       ...Object.fromEntries(adapters.flatMap((sdk) => Object.entries(sdk.environment))),
       TRON_URL: terminator.url,
       SSL_CERT_FILE: certificates.caFile,
@@ -115,6 +115,9 @@ async function main(runId: string, work: string): Promise<number> {
       TRON_PROXY_TLS_KEY_FILE: certificates.serverKeyFile,
       TRON_PROXY_TLS_CERT_FILE: certificates.serverCertificateFile,
     });
+    console.log(`TLS handshakes served by the terminator: ${terminator.handshakes()}`);
+    if (code === 0 && terminator.handshakes() === 0) throw new Error("the suite passed without a single TLS connection reaching Tron: the run did not exercise TLS");
+    return code;
   } finally {
     await terminator.close();
     await tron.stop();
@@ -134,6 +137,13 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   console.error("release conformance FAILED: do not tag or publish");
 }
-if (code === 0 && !process.argv.includes("--keep")) rmSync(work, { recursive: true, force: true });
-else console.log(`logs and packed artifacts kept in ${work}`);
+if (code === 0 && !process.argv.includes("--keep")) {
+  try {
+    rmSync(work, { recursive: true, force: true });
+  } catch (error) {
+    console.log(`could not remove ${work}: ${String(error)}`);
+  }
+} else {
+  console.log(`logs and packed artifacts kept in ${work}`);
+}
 process.exit(code);

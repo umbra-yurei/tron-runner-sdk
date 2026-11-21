@@ -24,15 +24,19 @@ export async function createCertificates(steps: Steps, directory: string): Promi
 export interface Terminator {
   /** https://127.0.0.1:<port> */
   url: string;
+  /** TLS handshakes completed so far; a run that served none did not exercise TLS. */
+  handshakes(): number;
   close(): Promise<void>;
 }
 
 /** Terminates TLS on a free loopback port and relays the decrypted bytes to `upstreamPort` on loopback. */
 export async function startTerminator(certificates: Certificates, upstreamPort: number): Promise<Terminator> {
   const connections = new Set<Socket>();
+  let handshakes = 0;
   const server: Server = createTlsServer(
     { key: readFileSync(certificates.serverKeyFile), cert: readFileSync(certificates.serverCertificateFile) },
     (client) => {
+      handshakes += 1;
       const upstream = createConnection({ host: "127.0.0.1", port: upstreamPort });
       connections.add(client);
       connections.add(upstream);
@@ -53,6 +57,7 @@ export async function startTerminator(certificates: Certificates, upstreamPort: 
   if (address === null || typeof address === "string") throw new Error("the TLS terminator has no TCP address");
   return {
     url: `https://127.0.0.1:${address.port}`,
+    handshakes: () => handshakes,
     close: async () => {
       for (const connection of connections) connection.destroy();
       await new Promise<void>((resolve) => server.close(() => resolve()));
