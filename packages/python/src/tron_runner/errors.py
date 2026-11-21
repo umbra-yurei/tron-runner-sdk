@@ -106,21 +106,16 @@ class DeliveryLostError(TronRunnerError):
         self.delivery_id = delivery_id
 
 
-class UnroutableDeliveryError(TronRunnerError):
-    """A delivery arrived that cannot be routed to one handler, so it was not accepted.
-
-    Protocol v1 `work` frames do not name the handler key they were dispatched for, so a runner
-    with more than one registered handler cannot tell which to run.
-    """
+class UnknownHandlerError(TronRunnerError):
+    """A delivery arrived for a handler key this runner has not registered, so it was not accepted."""
 
     delivery_id: UUID
+    handler_key: str
 
-    def __init__(self, delivery_id: UUID, handler_count: int) -> None:
-        super().__init__(
-            f"delivery {delivery_id} cannot be routed: protocol v1 `work` frames carry no handler key "
-            f"and {handler_count} handlers are registered"
-        )
+    def __init__(self, delivery_id: UUID, handler_key: str) -> None:
+        super().__init__(f"delivery {delivery_id} is for handler {handler_key!r}, which this runner has not registered")
         self.delivery_id = delivery_id
+        self.handler_key = handler_key
 
 
 class SecretStoreError(TronRunnerError):

@@ -58,11 +58,12 @@ protocol (`save`, `load`, `remove`, `pending`) to keep secrets in a database or 
 After a restart, `await runner.pending()` lists deliveries accepted but not yet reported and
 `await runner.report_pending(delivery_id, Ok("..."))` reports one.
 
-### One handler per runner, for now
+### Several handlers per runner
 
-In protocol `v1` a `work` frame does not carry the handler key it was dispatched for, so a runner with several
-handlers cannot route a delivery. Such a delivery is not accepted and is passed to `on_error` as
-`UnroutableDeliveryError`. Register one handler per runner process until Tron adds the key to `work`.
+A runner can register any number of handlers. Each `work` frame names the handler key it was dispatched for, and
+the runner runs the handler registered under that key. A delivery for a key with no registered handler is not
+accepted and is passed to `on_error` as `UnknownHandlerError` (with `delivery_id` and `handler_key`).
+Multi-handler routing needs a Tron whose `work` frame carries `handler_key`.
 
 ## Protocol messages are generated
 
