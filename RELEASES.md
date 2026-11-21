@@ -7,13 +7,21 @@ from. Both are emitted into each package by `npm run generate`, so the table bel
 
 | SDK | Registry name | Version | Runner protocol | AsyncAPI document | Git tag | Published |
 | --- | --- | --- | --- | --- | --- | --- |
-| Rust | `cruma-tron-runner` (crates.io) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
+| Rust | `cruma-tron-runner` (crates.io) | 0.1.1 | v1 | 0.1.0 | `packages/rust/v0.1.1` | not yet |
 | Python | `cruma-tron-runner` (PyPI) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
 | TypeScript | `@cruma-io/tron-runner` (npm) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
 | .NET | `Cruma.Tron.Runner` (NuGet) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
 | Go | `github.com/umbra-yurei/tron-runner-sdk/packages/go` | 0.1.0 | v1 | 0.1.0 | `packages/go/v0.1.0` | not yet |
 
 The "Published" column changes from "not yet" to the publish date in the commit that follows each publish.
+
+## Rust 0.1.1
+
+Rust only; the other four SDKs stay at 0.1.0 and the protocol is unchanged (v1, AsyncAPI document 0.1.0). Fixes a panic on the first
+`wss://` connection: 0.1.0 enabled rustls without selecting a crypto provider, so every connection to an `https://` Tron
+ended in "Could not automatically determine the process-level CryptoProvider". The SDK now builds an explicit rustls
+configuration with the `ring` provider and the bundled root certificates, and a test performs a real TLS handshake. 0.1.0
+is to be yanked once 0.1.1 is live (`cargo yank --version 0.1.0 cruma-tron-runner`).
 
 ## 0.1.0
 

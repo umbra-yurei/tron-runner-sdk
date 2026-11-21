@@ -27,12 +27,21 @@
 //!
 //! Protocol messages are the types in [`protocol`], generated from the AsyncAPI document Tron publishes;
 //! the SDK declares exactly the protocol version in [`PROTOCOL_VERSION`].
+//!
+//! # TLS
+//!
+//! `https://` and `wss://` endpoints work with no setup in your application. The SDK uses rustls with the `ring` crypto
+//! provider and the bundled Mozilla root certificates, and passes that configuration to each connection explicitly. It
+//! never installs a process-wide default provider and never looks one up, so it does not conflict with an application
+//! that installed its own, or that also has `aws-lc-rs` in its dependency tree. `ring` was chosen because it needs only
+//! a C compiler to build, where `aws-lc-rs` can need CMake or NASM on some platforms.
 
 mod endpoint;
 mod error;
 mod runner;
 mod session;
 mod store;
+mod tls;
 
 /// The runner protocol's message types, generated from Tron's published AsyncAPI document. Alongside the
 /// wire frames this module carries the conformance suite's adapter messages, which are generated from the

@@ -90,6 +90,7 @@ pub(crate) struct Config {
     pub on_event: EventCallback,
     pub backoff: Backoff,
     pub connect_timeout: Duration,
+    pub tls: Arc<rustls::ClientConfig>,
 }
 
 /// Configures and connects a [`Runner`]. Start with [`Runner::builder`].
@@ -104,6 +105,7 @@ pub struct RunnerBuilder {
     on_event: EventCallback,
     backoff: Backoff,
     connect_timeout: Duration,
+    extra_roots: Vec<rustls::pki_types::CertificateDer<'static>>,
 }
 
 impl RunnerBuilder {
@@ -163,6 +165,12 @@ impl RunnerBuilder {
         self
     }
 
+    #[cfg(test)]
+    pub(crate) fn trust_root(mut self, root: rustls::pki_types::CertificateDer<'static>) -> Self {
+        self.extra_roots.push(root);
+        self
+    }
+
     /// Connects, authenticates and announces, and returns once Tron has acknowledged the announcement.
     ///
     /// Fails with [`Error::Unreachable`], [`Error::AuthenticationFailed`] or [`Error::AnnouncementRejected`]
@@ -181,6 +189,8 @@ impl RunnerBuilder {
             Some(store) => store,
             None => Arc::new(FileSecretStore::new(DEFAULT_SECRET_DIRECTORY)?),
         };
+        let tls =
+            crate::tls::client_config(&self.extra_roots).map_err(|error| Error::Configuration(format!("TLS setup failed: {error}")))?;
         let announcement = RunnerAnnouncement {
             concurrency_capacity: Some(self.concurrency_capacity),
             display_name: self.display_name,
@@ -198,6 +208,7 @@ impl RunnerBuilder {
             on_event: self.on_event,
             backoff: self.backoff,
             connect_timeout: self.connect_timeout,
+            tls,
         });
         let established = session::handshake(&config).await?;
         let (control, messages) = mpsc::unbounded_channel();
@@ -232,6 +243,7 @@ impl Runner {
             on_event: Arc::new(|_| {}),
             backoff: Backoff::default(),
             connect_timeout: Duration::from_secs(15),
+            extra_roots: Vec::new(),
         }
     }
 
