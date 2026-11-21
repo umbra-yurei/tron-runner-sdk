@@ -39,14 +39,13 @@ pub enum Error {
     /// Tron sent a frame that makes no sense in the current state, such as `accepted` for a delivery that was never taken.
     #[error("unexpected frame from Tron: {0}")]
     UnexpectedFrame(String),
-    /// More than one handler is registered, and protocol `v1` does not say which of them a `work` frame is for.
-    /// The delivery is not accepted.
-    #[error("cannot route delivery {delivery_id}: protocol v1 `work` frames do not name a handler and {handler_count} are registered")]
-    UnroutableDelivery {
+    /// A `work` frame named a handler key that no handler is registered for. The delivery is not accepted.
+    #[error("cannot route delivery {delivery_id}: no handler is registered for key {handler_key:?}")]
+    UnknownHandler {
         /// The delivery that was not accepted.
         delivery_id: String,
-        /// How many handlers are registered.
-        handler_count: usize,
+        /// The handler key the delivery named.
+        handler_key: String,
     },
     /// The secret store failed.
     #[error("secret store failed: {0}")]

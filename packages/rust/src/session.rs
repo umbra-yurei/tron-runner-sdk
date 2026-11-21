@@ -396,17 +396,15 @@ impl Actor {
             log::debug!("tron runner: stopping; not accepting delivery {}", work.delivery_id);
             return Ok(());
         }
-        // Protocol v1 does not say which handler a delivery is for, so only a sole handler can be routed to.
-        let mut keys = self.config.handlers.keys();
-        let (Some(handler_key), None) = (keys.next(), keys.next()) else {
-            self.fail(Error::UnroutableDelivery {
+        if !self.config.handlers.contains_key(&work.handler_key) {
+            self.fail(Error::UnknownHandler {
                 delivery_id: work.delivery_id,
-                handler_count: self.config.handlers.len(),
+                handler_key: work.handler_key,
             });
             return Ok(());
-        };
+        }
         let job = Job {
-            handler_key: handler_key.clone(),
+            handler_key: work.handler_key,
             run_id: work.run_id,
             job_id: work.job_id,
             job_name: work.job_name,

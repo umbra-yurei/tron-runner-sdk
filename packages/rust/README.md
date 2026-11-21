@@ -49,11 +49,12 @@ Things that happen without a caller to return to, such as a refused accept or a 
 
 Retrying failed deliveries, and enforcing the capacity you announce, are Tron's job; the SDK does neither.
 
-### One handler per runner for now
+### Routing by handler key
 
-Protocol `v1` does not say which handler a `work` frame is for, so a runner with more than one handler cannot route a
-delivery. Such a delivery is not accepted and surfaces as `Error::UnroutableDelivery` rather than being guessed at.
-Register one handler per runner until Tron's `work` frames carry the handler key.
+Each `work` frame names the handler key it was dispatched for, and the SDK invokes the handler registered under that key
+with `Job::handler_key` set from the frame. A delivery whose key has no registered handler is not accepted and surfaces
+as `Event::Error(Error::UnknownHandler { delivery_id, handler_key })`. Routing by key needs a Tron whose `work` frames
+carry the key.
 
 ## Development
 
