@@ -3172,6 +3172,56 @@
         ],
         "description": "Typed runner delivery contract.  It replaces the legacy fan-out pair so\nclients cannot combine a dispatch policy with an incompatible threshold."
       },
+      "JobLastRunResponse": {
+        "type": "object",
+        "description": "How a job's most recent run stands. Carries no delivery detail, runner\ncredentials or result data.",
+        "required": [
+          "id",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failure_kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunFailureKind"
+              }
+            ]
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Absent while the run is still open."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "status_reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RunStatusReason"
+              }
+            ]
+          }
+        }
+      },
       "JobMissedRun": {
         "oneOf": [
           {
@@ -3318,6 +3368,17 @@
           "id": {
             "type": "string",
             "format": "uuid"
+          },
+          "last_run": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JobLastRunResponse",
+                "description": "The job's most recently created run, derived when the job is read.\nAbsent when the job never ran."
+              }
+            ]
           },
           "lateness_threshold_seconds": {
             "type": "integer",
@@ -4899,7 +4960,7 @@
         "properties": {
           "compatibility_handler_key": {
             "$ref": "#/components/schemas/RunnerHandlerKey",
-            "description": "Compatibility handler assigned to pre-capability jobs. Every live\nsession remains capable of it for this release."
+            "description": "Compatibility handler assigned to pre-capability jobs. Sessions that\nnever announced and sessions that announced it are capable of it."
           },
           "handlers": {
             "type": "array",

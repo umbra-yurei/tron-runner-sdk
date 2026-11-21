@@ -668,6 +668,24 @@ export interface components {
             /** @enum {string} */
             mode: "advanced_at_least";
         };
+        /**
+         * @description How a job's most recent run stands. Carries no delivery detail, runner
+         *     credentials or result data.
+         */
+        JobLastRunResponse: {
+            /** Format: date-time */
+            created_at: string;
+            failure_kind?: null | components["schemas"]["RunFailureKind"];
+            /**
+             * Format: date-time
+             * @description Absent while the run is still open.
+             */
+            finished_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["RunStatus"];
+            status_reason?: null | components["schemas"]["RunStatusReason"];
+        };
         /** @description What to do when a runner is unavailable at a scheduled time. */
         JobMissedRun: {
             /** @enum {string} */
@@ -725,6 +743,7 @@ export interface components {
             effective_miss_grace_seconds: number;
             /** Format: uuid */
             id: string;
+            last_run?: null | components["schemas"]["JobLastRunResponse"];
             /** Format: int32 */
             lateness_threshold_seconds: number;
             /** Format: int32 */
@@ -1441,8 +1460,8 @@ export interface components {
          */
         RunnerCapabilities: {
             /**
-             * @description Compatibility handler assigned to pre-capability jobs. Every live
-             *     session remains capable of it for this release.
+             * @description Compatibility handler assigned to pre-capability jobs. Sessions that
+             *     never announced and sessions that announced it are capable of it.
              */
             compatibility_handler_key: components["schemas"]["RunnerHandlerKey"];
             handlers: components["schemas"]["HandlerCapability"][];
