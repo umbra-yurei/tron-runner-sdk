@@ -77,6 +77,7 @@ fn work() -> WorkFrame {
     WorkFrame {
         accept_deadline: "2026-01-02T03:04:35Z".into(),
         delivery_id: DELIVERY.into(),
+        handler_key: "backup".into(),
         job_id: "job".into(),
         job_name: "nightly".into(),
         run_id: "run".into(),

@@ -510,7 +510,7 @@ export interface components {
          *     enum, not a bare string, so clients match on a value the compiler knows.
          * @enum {string}
          */
-        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "invalid_job_configuration" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "database_unavailable";
+        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "invalid_job_configuration" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "invalid_run_search" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "live_job_limit_reached" | "database_unavailable";
         /**
          * @description How the backend authenticates requests.
          *
@@ -1246,6 +1246,13 @@ export interface components {
              */
             delivery_id: string;
             /**
+             * @description The job's runner handler key. For a connection that announced
+             *     handler keys it is one of them; a connection that never announced
+             *     receives work for every key. A runner with several handlers runs
+             *     the one with this key.
+             */
+            handler_key: components["schemas"]["RunnerHandlerKey"];
+            /**
              * Format: uuid
              * @description The job that was triggered.
              */
@@ -1757,6 +1764,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorBody"];
                 };
             };
+            /** @description The owner already has the most live jobs allowed; delete one first */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
             /** @description The database is unavailable */
             500: {
                 headers: {
@@ -2057,6 +2073,15 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorBody"];
                 };
             };
+            /** @description Restoring would exceed the most live jobs the owner may have; delete one first */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
             /** @description The database is unavailable */
             500: {
                 headers: {
@@ -2073,6 +2098,18 @@ export interface operations {
             query?: {
                 /** @description Narrow the listing to one kind of run. Omit it for every run. */
                 filter?: components["schemas"]["RunListFilter"];
+                /**
+                 * @description Only runs in exactly this state. Combines with `filter` (both must
+                 *     hold).
+                 */
+                status?: components["schemas"]["RunStatus"];
+                /** @description Only runs with a runner delivery that ended with this outcome. */
+                outcome?: components["schemas"]["RunOutcomeKind"];
+                /**
+                 * @description Only runs with a runner delivery whose result message contains this
+                 *     text, ignoring case. At most 200 characters; an empty value is ignored.
+                 */
+                message_contains?: string;
                 /** @description Zero-based page number. Negative values select the first page. */
                 page?: number;
                 /** @description Runs per page. Values are clamped to keep a single response bounded. */
@@ -2097,6 +2134,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobRunPageResponse"];
+                };
+            };
+            /** @description The result-message search text is longer than 200 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
                 };
             };
             /** @description Unauthenticated */

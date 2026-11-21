@@ -1216,7 +1216,8 @@ class WorkFrameType(Enum):
 @dataclass
 class WorkFrame:
     """A run has been dispatched to this connection as one delivery. It
-    carries no job input or payload: only ids, the job's name and times.
+    carries no job input or payload: only ids, the job's name, the handler
+    key it was dispatched for and times.
     """
     accept_deadline: str
     """`accept` must arrive by this time. It is the push time plus the
@@ -1225,6 +1226,7 @@ class WorkFrame:
     delivery_id: UUID
     """Names this delivery; echo it in `accept` and `report`."""
 
+    handler_key: str
     job_id: UUID
     """The job that was triggered."""
 
@@ -1244,17 +1246,19 @@ class WorkFrame:
         assert isinstance(obj, dict)
         accept_deadline = from_str(obj.get("accept_deadline"))
         delivery_id = UUID(obj.get("delivery_id"))
+        handler_key = from_str(obj.get("handler_key"))
         job_id = UUID(obj.get("job_id"))
         job_name = from_str(obj.get("job_name"))
         run_id = UUID(obj.get("run_id"))
         scheduled_for = from_str(obj.get("scheduled_for"))
         type = WorkFrameType(obj.get("type"))
-        return WorkFrame(accept_deadline, delivery_id, job_id, job_name, run_id, scheduled_for, type)
+        return WorkFrame(accept_deadline, delivery_id, handler_key, job_id, job_name, run_id, scheduled_for, type)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["accept_deadline"] = from_str(self.accept_deadline)
         result["delivery_id"] = str(self.delivery_id)
+        result["handler_key"] = from_str(self.handler_key)
         result["job_id"] = str(self.job_id)
         result["job_name"] = from_str(self.job_name)
         result["run_id"] = str(self.run_id)
