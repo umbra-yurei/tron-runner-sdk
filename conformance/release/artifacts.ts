@@ -2,7 +2,7 @@
 // adapter against the packed artifact, never the source tree. Each stager returns the adapter registration the harness
 // drives, the artifact files it packed, and has already checked the adapter resolves the SDK from the artifact.
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AdapterRegistration } from "../../packages/typescript/src/generated/protocol.ts";
@@ -35,6 +35,22 @@ function artifact(file: string): { file: string; sha256: string } {
   return { file, sha256: createHash("sha256").update(readFileSync(file)).digest("hex") };
 }
 
+// Copies content only (no mode, owner or timestamps), so it needs nothing from the work directory but create and write:
+// fs.cpSync also chmods what it creates and failed with EACCES on the aarch64 Mac runner's work directory (b5fe5072).
+function copyTree(from: string, to: string, keep: (path: string) => boolean = () => true): void {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    const source = join(from, entry.name);
+    if (!keep(source)) continue;
+    if (entry.isDirectory()) copyTree(source, join(to, entry.name), keep);
+    else writeFileSync(join(to, entry.name), readFileSync(source));
+  }
+}
+
+function copyFile(from: string, to: string): void {
+  writeFileSync(to, readFileSync(from));
+}
+
 function only(directory: string, extension: string): string {
   const found = readdirSync(directory).filter((name) => name.endsWith(extension));
   if (found.length !== 1) throw new Error(`expected exactly one ${extension} in ${directory}, found ${JSON.stringify(found)}`);
@@ -57,8 +73,8 @@ export async function stageRust(context: StageContext): Promise<StagedSdk> {
   if (!unpacked) throw new Error(`${crate} did not unpack to a cruma-tron-runner-* directory`);
 
   const adapter = join(work, "adapter");
-  cpSync(join(crateSource, "conformance-adapter"), adapter, { recursive: true });
-  cpSync(join(crateSource, "Cargo.lock"), join(adapter, "Cargo.lock"));
+  copyTree(join(crateSource, "conformance-adapter"), adapter);
+  copyFile(join(crateSource, "Cargo.lock"), join(adapter, "Cargo.lock"));
   const manifest = join(adapter, "Cargo.toml");
   writeFileSync(manifest, `${replaceExactly(readFileSync(manifest, "utf8"), 'path = ".."', `path = "../${unpacked}"`, manifest)}\n[workspace]\n`);
 
@@ -116,7 +132,7 @@ export async function stagePython(context: StageContext): Promise<StagedSdk> {
   // The adapter finds the SDK sources relative to its own location (three directories up); copied here, that path does not exist.
   const adapterDirectory = join(work, "conformance/adapters/python");
   mkdirSync(adapterDirectory, { recursive: true });
-  cpSync(join(tree, "conformance/adapters/python/adapter.py"), join(adapterDirectory, "adapter.py"));
+  copyFile(join(tree, "conformance/adapters/python/adapter.py"), join(adapterDirectory, "adapter.py"));
   const location = (await steps.run("python-provenance", [python, "-c", `import ${PYTHON_MODULE}; print(${PYTHON_MODULE}.__file__)`], { cwd: work })).trim();
   if (!location.startsWith(join(venv, "lib"))) throw new Error(`the Python SDK imported from ${location}, not from the installed wheel in ${venv}`);
   return {
@@ -137,7 +153,7 @@ export async function stageDotnet(context: StageContext): Promise<StagedSdk> {
   const version = nupkg.slice(join(feed, `${NUGET_PACKAGE_ID}.`).length, -".nupkg".length);
 
   const adapter = join(work, "adapter");
-  cpSync(join(tree, "packages/dotnet/adapter"), adapter, { recursive: true, filter: (path) => !/\/(bin|obj|out)(\/|$)/.test(path) });
+  copyTree(join(tree, "packages/dotnet/adapter"), adapter, (path) => !/\/(bin|obj|out)(\/|$)/.test(path));
   const project = join(adapter, "Cruma.Tron.Runner.ConformanceAdapter.csproj");
   writeFileSync(
     project,
@@ -179,7 +195,7 @@ export async function stageGo(context: StageContext): Promise<StagedSdk> {
   // A separate module requires the SDK by version, through the proxy directory, exactly as a user's module would.
   const adapter = join(work, "adapter");
   mkdirSync(adapter);
-  cpSync(join(tree, "packages/go/conformance/adapter/main.go"), join(adapter, "main.go"));
+  copyFile(join(tree, "packages/go/conformance/adapter/main.go"), join(adapter, "main.go"));
   writeFileSync(join(adapter, "go.mod"), `module tron-release-conformance/go-adapter\n\ngo 1.23\n\nrequire ${GO_SDK_MODULE} ${GO_PROXY_VERSION}\n`);
   const env = { GOPROXY: `file://${proxy},https://proxy.golang.org,direct`, GOSUMDB: "off", GOMODCACHE: modcache, GOFLAGS: "-mod=mod -modcacherw" };
   await steps.run("go-adapter-tidy", ["go", "mod", "tidy"], { cwd: adapter, env });
