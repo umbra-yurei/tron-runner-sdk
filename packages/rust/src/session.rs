@@ -16,7 +16,7 @@ use tokio::{
     net::TcpStream,
     sync::{mpsc, oneshot},
 };
-use tokio_tungstenite::{connect_async, tungstenite::Message as WsMessage, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{connect_async_tls_with_config, tungstenite::Message as WsMessage, Connector, MaybeTlsStream, WebSocketStream};
 
 type Socket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -110,7 +110,8 @@ async fn attempt(config: &Config) -> Result<Established, HandshakeError> {
 
 async fn exchange(config: &Config) -> Result<Established, HandshakeError> {
     let transport = |error: &dyn std::fmt::Display| HandshakeError::Transport(error.to_string());
-    let (mut socket, _) = connect_async(config.endpoint.websocket_url())
+    let connector = Connector::Rustls(Arc::clone(&config.tls));
+    let (mut socket, _) = connect_async_tls_with_config(config.endpoint.websocket_url(), None, false, Some(connector))
         .await
         .map_err(|error| transport(&error))?;
     let authenticate = AuthenticateFrame {

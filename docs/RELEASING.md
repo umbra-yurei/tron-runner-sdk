@@ -44,6 +44,9 @@ Notes:
   environment, which only accepts `v*` tags. Every action in it is pinned to a full commit SHA because the
   organisation requires that; update the SHA and the version comment together.
 - Tag the commit once, as `vX.Y.Z`, so the tag also marks the release for the other four SDKs.
+- A fix to one SDK is released as a patch of that SDK alone: bump only its manifest and its `RELEASES.md` row, and tag
+  it `packages/<sdk>/vX.Y.Z` (never a bare `v*` tag, which the NuGet workflow would treat as a NuGet release).
+  The "same version in every manifest" rule applies to a full release of all five. Rust 0.1.1 is the first such patch.
 
 ## After publishing
 

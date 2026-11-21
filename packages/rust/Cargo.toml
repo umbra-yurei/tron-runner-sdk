@@ -1,6 +1,6 @@
 [package]
 name = "cruma-tron-runner"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Connect a worker to Tron, receive scheduled jobs over the runner protocol, and report their results."
 license = "MIT"
@@ -21,11 +21,17 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["rt", "macros", "sync", "time", "fs"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots"] }
 url = "2"
+webpki-roots = "0.26"
 
 [dev-dependencies]
+# Both providers on, as in an application that also pulls in aws-lc-rs: rustls then cannot pick a default and the SDK must not rely on one.
+rustls = { version = "0.23", default-features = false, features = ["aws-lc-rs", "ring", "std", "tls12"] }
+rcgen = { version = "0.13", default-features = false, features = ["aws_lc_rs", "pem"] }
 tempfile = "3"
+tokio-rustls = { version = "0.26", default-features = false, features = ["aws-lc-rs"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 
 [lints.rust]
