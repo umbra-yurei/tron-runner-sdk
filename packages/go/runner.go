@@ -494,18 +494,15 @@ func (r *Runner) dispatch(s *session, f frame) {
 	}
 }
 
-// route picks the handler for a delivery. Protocol v1 `work` frames do not name the handler key
-// they were dispatched for, so only a runner with exactly one handler can route.
+// route picks the handler registered for the key the work frame was dispatched for.
 func (r *Runner) route(work generated.WorkFrame) (Handler, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if len(r.handlers) != 1 {
-		return nil, &UnroutableDeliveryError{DeliveryID: work.DeliveryID, HandlerCount: len(r.handlers)}
+	handler, ok := r.handlers[work.HandlerKey]
+	if !ok {
+		return nil, &UnknownHandlerError{DeliveryID: work.DeliveryID, HandlerKey: work.HandlerKey}
 	}
-	for _, handler := range r.handlers {
-		return handler, nil
-	}
-	return nil, nil
+	return handler, nil
 }
 
 func newDelivery(work generated.WorkFrame) (Delivery, error) {
