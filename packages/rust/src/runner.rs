@@ -182,7 +182,7 @@ impl RunnerBuilder {
             None => Arc::new(FileSecretStore::new(DEFAULT_SECRET_DIRECTORY)?),
         };
         let announcement = RunnerAnnouncement {
-            concurrency_capacity: self.concurrency_capacity,
+            concurrency_capacity: Some(self.concurrency_capacity),
             display_name: self.display_name,
             handler_keys: handlers.keys().cloned().collect(),
             protocol_version: Some(SUPPORTED_PROTOCOL),

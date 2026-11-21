@@ -22,6 +22,9 @@ immediately, persists the delivery's one-time secret before running the handler,
 reconnects after a dropped connection and drains in-flight work on stop. Conformance against a real Tron is described in
 [`conformance/README.md`](conformance/README.md).
 
-Known limit: this release does not yet route a delivery to the matching handler, so a runner should register one handler
-per connection. The next release routes each delivery by the work frame's `handler_key` (protocol v1) and refuses a key
-with no registered handler with a typed `unknown_handler` error.
+Each delivery is routed by the work frame's `handler_key` (protocol v1) to the handler registered under that key, so one
+runner can register several handlers on one connection. A key with no registered handler is refused with a typed
+`unknown_handler` error. Every adapter passes the two-handler routing case of the conformance suite.
+
+`concurrency_capacity` is optional in the protocol (Tron defaults an omitted value to 1), but every SDK still announces
+it, so a 0.1.0 runner is accepted by Tron versions that require the field as well as by current ones.

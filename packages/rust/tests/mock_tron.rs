@@ -171,7 +171,7 @@ async fn announces_accepts_persists_reports_and_drains() {
     let runner = runner.await.unwrap().unwrap();
     let announcement = announce.announcement;
     assert_eq!(announcement.handler_keys, ["nightly"]);
-    assert_eq!(announcement.concurrency_capacity, 3);
+    assert_eq!(announcement.concurrency_capacity, Some(3));
     assert_eq!(announcement.display_name.as_deref(), Some("mock"));
     assert_eq!(announcement.protocol_version, Some(RunnerProtocolVersion::V1));
     assert_eq!(announcement.sdk_version.as_deref(), Some(SDK_VERSION));

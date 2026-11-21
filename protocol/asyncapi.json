@@ -334,14 +334,13 @@
         "type": "object",
         "description": "What a runner declares about its connection in `announce`.",
         "required": [
-          "handler_keys",
-          "concurrency_capacity"
+          "handler_keys"
         ],
         "properties": {
           "concurrency_capacity": {
             "type": "integer",
             "format": "int32",
-            "description": "Maximum concurrent work this session accepts; it must be positive.",
+            "description": "Maximum concurrent work this session accepts; it must be positive. Omitted values default to 1 for compatibility with older runners.",
             "minimum": 0
           },
           "display_name": {

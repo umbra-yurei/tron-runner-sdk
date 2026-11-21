@@ -586,23 +586,24 @@ type AnnounceFrame struct {
 
 // What a runner declares about its connection in `announce`.
 type RunnerAnnouncement struct {
-	// Maximum concurrent work this session accepts; it must be positive.                          
-	ConcurrencyCapacity                                                     int64                  `json:"concurrency_capacity"`
-	// Optional human-readable name shown to the owner; a supplied value is                        
-	// non-blank and at most 128 bytes long.                                                       
-	DisplayName                                                             *string                `json:"display_name,omitempty"`
-	// Stable handler keys the runner can execute. The set must contain 1 to                       
-	// 128 unique keys, each 1–128 bytes and matching                                              
-	// `[A-Za-z0-9][A-Za-z0-9_.-]*`.                                                               
-	HandlerKeys                                                             []string               `json:"handler_keys"`
-	ProtocolVersion                                                         *RunnerProtocolVersion `json:"protocol_version,omitempty"`
-	// Optional runner implementation version, retained as display metadata;                       
-	// a supplied value is non-blank and at most 128 bytes long.                                   
-	RunnerVersion                                                           *string                `json:"runner_version,omitempty"`
-	// Optional semantic SDK version, used by the server to report whether                         
-	// this session is older than a peer. A supplied value must parse as a                         
-	// semantic version and be non-blank and at most 128 bytes long.                               
-	SDKVersion                                                              *string                `json:"sdk_version,omitempty"`
+	// Maximum concurrent work this session accepts; it must be positive. Omitted values default                       
+	// to 1 for compatibility with older runners.                                                                      
+	ConcurrencyCapacity                                                                         *int64                 `json:"concurrency_capacity,omitempty"`
+	// Optional human-readable name shown to the owner; a supplied value is                                            
+	// non-blank and at most 128 bytes long.                                                                           
+	DisplayName                                                                                 *string                `json:"display_name,omitempty"`
+	// Stable handler keys the runner can execute. The set must contain 1 to                                           
+	// 128 unique keys, each 1–128 bytes and matching                                                                  
+	// `[A-Za-z0-9][A-Za-z0-9_.-]*`.                                                                                   
+	HandlerKeys                                                                                 []string               `json:"handler_keys"`
+	ProtocolVersion                                                                             *RunnerProtocolVersion `json:"protocol_version,omitempty"`
+	// Optional runner implementation version, retained as display metadata;                                           
+	// a supplied value is non-blank and at most 128 bytes long.                                                       
+	RunnerVersion                                                                               *string                `json:"runner_version,omitempty"`
+	// Optional semantic SDK version, used by the server to report whether                                             
+	// this session is older than a peer. A supplied value must parse as a                                             
+	// semantic version and be non-blank and at most 128 bytes long.                                                   
+	SDKVersion                                                                                  *string                `json:"sdk_version,omitempty"`
 }
 
 // Confirms that this connection's `announce` was retained.
