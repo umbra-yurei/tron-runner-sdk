@@ -73,11 +73,11 @@ async fn welcome(listener: &TcpListener) -> (Server, AnnounceFrame) {
     (server, announce)
 }
 
-fn work() -> WorkFrame {
+fn work(handler_key: &str) -> WorkFrame {
     WorkFrame {
         accept_deadline: "2026-01-02T03:04:35Z".into(),
         delivery_id: DELIVERY.into(),
-        handler_key: "backup".into(),
+        handler_key: handler_key.into(),
         job_id: "job".into(),
         job_name: "nightly".into(),
         run_id: "run".into(),
@@ -177,7 +177,7 @@ async fn announces_accepts_persists_reports_and_drains() {
     assert_eq!(announcement.sdk_version.as_deref(), Some(SDK_VERSION));
     assert!(matches!(next_event(&mut events).await, Event::Connected { session_id } if session_id == "session"));
 
-    send(&mut server, &work()).await;
+    send(&mut server, &work("nightly")).await;
     let accept: AcceptFrame = receive_as(&mut server, RunnerFrameKind::Accept).await;
     assert_eq!(accept.delivery_id, DELIVERY);
     send(
@@ -228,7 +228,7 @@ async fn an_err_outcome_is_reported_as_err() {
     );
     let (mut server, _) = welcome(&listener).await;
     let _runner = runner.await.unwrap().unwrap();
-    send(&mut server, &work()).await;
+    send(&mut server, &work("h")).await;
     receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
     send(
         &mut server,
@@ -263,7 +263,7 @@ async fn a_refused_accept_is_a_typed_event_and_the_handler_does_not_run() {
     let (mut server, _) = welcome(&listener).await;
     let runner = runner.await.unwrap().unwrap();
     next_event(&mut events).await;
-    send(&mut server, &work()).await;
+    send(&mut server, &work("h")).await;
     receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
     send(
         &mut server,
@@ -312,14 +312,28 @@ async fn reconnects_with_a_fresh_session_after_the_connection_drops() {
 }
 
 #[tokio::test]
-async fn several_handlers_cannot_be_routed_so_the_delivery_is_not_accepted() {
+async fn each_delivery_is_routed_to_the_handler_registered_for_its_key() {
     let (listener, endpoint) = listen().await;
     let (callback, mut events) = events();
+    let invoked = Arc::new(Mutex::new(Vec::new()));
+    let (seen_a, seen_b) = (Arc::clone(&invoked), Arc::clone(&invoked));
     let runner = tokio::spawn(
         Runner::builder(endpoint, "token")
             .on_event(callback)
-            .on("a", |_| async { Ok(String::new()) })
-            .on("b", |_| async { Ok(String::new()) })
+            .on("a", move |job| {
+                let seen = Arc::clone(&seen_a);
+                async move {
+                    seen.lock().unwrap().push(job.handler_key);
+                    Ok("from a".to_owned())
+                }
+            })
+            .on("b", move |job| {
+                let seen = Arc::clone(&seen_b);
+                async move {
+                    seen.lock().unwrap().push(job.handler_key);
+                    Err("from b".to_owned())
+                }
+            })
             .secret_store(FileSecretStore::new(tempfile::tempdir().unwrap().keep()).unwrap())
             .connect(),
     );
@@ -327,12 +341,80 @@ async fn several_handlers_cannot_be_routed_so_the_delivery_is_not_accepted() {
     let runner = runner.await.unwrap().unwrap();
     assert_eq!(announce.announcement.handler_keys, ["a", "b"]);
     next_event(&mut events).await;
-    send(&mut server, &work()).await;
-    assert!(matches!(
-        next_event(&mut events).await,
-        Event::Error(Error::UnroutableDelivery { handler_count: 2, .. })
-    ));
+
+    for (key, delivery, expected_ok, expected_err) in [("a", "delivery-a", Some("from a"), None), ("b", "delivery-b", None, Some("from b"))]
+    {
+        let mut frame = work(key);
+        frame.delivery_id = delivery.into();
+        send(&mut server, &frame).await;
+        let accept: AcceptFrame = receive_as(&mut server, RunnerFrameKind::Accept).await;
+        assert_eq!(accept.delivery_id, delivery);
+        send(
+            &mut server,
+            &AcceptedFrame {
+                delivery_id: delivery.into(),
+                secret: "the-secret".into(),
+                accepted_frame_type: AcceptedFrameType::Accepted,
+            },
+        )
+        .await;
+        let report: ReportFrame = receive_as(&mut server, RunnerFrameKind::Report).await;
+        assert_eq!(report.delivery_id, delivery);
+        assert_eq!(
+            (report.outcome.ok.as_deref(), report.outcome.err.as_deref()),
+            (expected_ok, expected_err)
+        );
+        send(
+            &mut server,
+            &ReportRecordedFrame {
+                delivery_id: delivery.into(),
+                late: false,
+                report_recorded_frame_type: ReportRecordedEventType::ReportRecorded,
+            },
+        )
+        .await;
+    }
+    assert_eq!(*invoked.lock().unwrap(), ["a", "b"]);
     runner.stop().await;
+}
+
+#[tokio::test]
+async fn a_delivery_for_an_unregistered_key_is_not_accepted() {
+    let (listener, endpoint) = listen().await;
+    let (callback, mut events) = events();
+    let runner = tokio::spawn(
+        Runner::builder(endpoint, "token")
+            .on_event(callback)
+            .on("a", |_| async { Ok(String::new()) })
+            .secret_store(FileSecretStore::new(tempfile::tempdir().unwrap().keep()).unwrap())
+            .connect(),
+    );
+    let (mut server, _) = welcome(&listener).await;
+    let runner = runner.await.unwrap().unwrap();
+    next_event(&mut events).await;
+    send(&mut server, &work("missing")).await;
+    match next_event(&mut events).await {
+        Event::Error(Error::UnknownHandler { delivery_id, handler_key }) => {
+            assert_eq!((delivery_id.as_str(), handler_key.as_str()), (DELIVERY, "missing"));
+        }
+        other => panic!("expected UnknownHandler, got {other:?}"),
+    }
+    // Nothing was accepted, so the runner drains immediately and Tron saw no accept frame.
+    runner.stop().await;
+    assert!(tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            match server.next().await {
+                Some(Ok(Message::Text(text))) => {
+                    let tag: RunnerFrameTag = serde_json::from_str(text.as_str()).unwrap();
+                    assert_ne!(tag.runner_frame_tag_type, RunnerFrameKind::Accept, "an accept frame was sent");
+                }
+                Some(Ok(_)) => {}
+                _ => break,
+            }
+        }
+    })
+    .await
+    .is_ok());
 }
 
 /// The runner shown in the documentation, run as written. Tron's address, the worker key and the secret directory
@@ -348,7 +430,7 @@ async fn the_documented_example_runs_a_delivery_and_reports_it() -> Result<(), B
     let (reported_sender, reported) = tokio::sync::oneshot::channel();
     let tron = tokio::spawn(async move {
         let (mut server, announce) = welcome(&listener).await;
-        send(&mut server, &work()).await;
+        send(&mut server, &work("send-report")).await;
         receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
         send(
             &mut server,
