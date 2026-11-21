@@ -15,6 +15,8 @@ npm run conformance -- --adapter reference-typescript --scenario drains
 npm run conformance -- --list
 ```
 
+Adapters that need a build step are built first: `npm run build:dotnet-adapter` for `dotnet` (.NET 8 SDK).
+
 Environment: `TRON_URL` (attach), else `TRON_DIR` (default `../tron`), `TRON_PORT` (default 8090) and `DATABASE_URL`
 (default Tron's local Postgres). Starting Tron needs a container engine for its Postgres and Tron's Rust toolchain;
 the first start compiles Tron. Tron's server log goes to `conformance/.run/tron.log`.
