@@ -22,6 +22,6 @@ immediately, persists the delivery's one-time secret before running the handler,
 reconnects after a dropped connection and drains in-flight work on stop. Conformance against a real Tron is described in
 [`conformance/README.md`](conformance/README.md).
 
-Known limit: the work frame names the handler key it was dispatched for (`handler_key`, protocol v1), but the SDKs do not
-yet route a delivery to the matching handler, so a runner should register one handler per connection until that lands
-(board task `3e3b9da6`).
+Known limit: this release does not yet route a delivery to the matching handler, so a runner should register one handler
+per connection. The next release routes each delivery by the work frame's `handler_key` (protocol v1) and refuses a key
+with no registered handler with a typed `unknown_handler` error.

@@ -25,10 +25,9 @@ checks is marked **[tested]**.
 3. **Register handlers**: a handler is a function from a delivery (run id, job id, job name, delivery id, deadline)
    to an `Ok(message)` or `Err(message)` outcome. The set of registered handler keys is what is announced; Tron
    only pushes work for a job whose handler key a session announced. **[tested]**
-   - *Known protocol gap:* in protocol `v1` a `work` frame does not carry the handler key it was dispatched for,
-     so a runner that registers several handlers cannot route a delivery to one of them. Until Tron adds the key to
-     `work`, an SDK that has more than one handler must fail loudly on a delivery rather than guess. The conformance
-     adapters register one handler each.
+   - A `work` frame's `handler_key` selects the handler the delivery runs, so one runner can register several handlers.
+     A key with no registered handler is not accepted and is a typed `unknown_handler` error naming the delivery and
+     key; the SDK never falls back to another handler. **[tested]**
 4. **Accept immediately.** On `work` the SDK sends `accept` before running the handler. Acceptance past the deadline
    is refused by Tron; that is a typed `accept_refused` error carrying the closed refusal reason and the handler is
    not run. **[tested: delivery_timed_out]**
