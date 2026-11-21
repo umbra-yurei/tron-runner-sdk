@@ -67,7 +67,8 @@ handlers cannot route a delivery. Such a delivery is not accepted and is passed 
 
 `tron_runner.generated.protocol` is emitted from Tron's published AsyncAPI document by the repository's
 `npm run generate`; nothing in this package hand-writes a frame. `tron_runner.PROTOCOL_VERSION` is the protocol
-version this release speaks, and CI fails if the generated files are stale or the SDK does not decode every
-frame the document defines.
+version this release speaks. CI fails if the generated files are stale (`npm run check:generated`) or if the SDK
+does not decode every frame the document defines (importing `tron_runner` checks that against the generated
+`ServerFrameKind`).
 
 MIT licensed.

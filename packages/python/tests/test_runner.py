@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import stat
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TypeVar
 from uuid import UUID, uuid4
 
 import pytest
@@ -22,15 +21,17 @@ from tron_runner import (
     Ok,
     Outcome,
     RecordedReport,
+    MalformedFrameError,
     ReportRejectedError,
     Runner,
+    RunnerCrashedError,
     TronRunnerError,
     UnreachableError,
     UnroutableDeliveryError,
 )
 from tron_runner.generated import protocol
 
-from .fake_tron import FakeTron, accept_refused, accepted, report_recorded, report_rejected, work
+from .fake_tron import FakeTron, RunnerFrame, accept_refused, accepted, report_recorded, report_rejected, work
 
 T = TypeVar("T")
 SECRET = "delivery-secret"
@@ -43,8 +44,12 @@ def run(scenario: Callable[[], Awaitable[T]]) -> T:
     return asyncio.run(bounded())
 
 
-def reports(tron: FakeTron) -> list[dict[str, Any]]:
-    return [document for document in tron.received if document["type"] == "report"]
+def reports(tron: FakeTron) -> list[protocol.ReportFrame]:
+    return [received for received in tron.received if isinstance(received, protocol.ReportFrame)]
+
+
+def accepts(tron: FakeTron) -> list[protocol.AcceptFrame]:
+    return [received for received in tron.received if isinstance(received, protocol.AcceptFrame)]
 
 
 def serve_one_delivery(tron: FakeTron, delivery_id: UUID, *, answer: Callable[[UUID], str] = report_recorded) -> None:
@@ -52,10 +57,10 @@ def serve_one_delivery(tron: FakeTron, delivery_id: UUID, *, answer: Callable[[U
         if number == 1:
             await connection.send(work(delivery_id))
 
-    async def on_frame(connection: ServerConnection, document: dict[str, Any]) -> None:
-        if document["type"] == "accept":
+    async def on_frame(connection: ServerConnection, received: RunnerFrame) -> None:
+        if isinstance(received, protocol.AcceptFrame):
             await connection.send(accepted(delivery_id, SECRET))
-        elif document["type"] == "report":
+        elif isinstance(received, protocol.ReportFrame):
             await connection.send(answer(delivery_id))
 
     tron.on_announced = on_announced
@@ -72,15 +77,6 @@ def test_runner_url_appends_the_generated_channel_to_the_base_url() -> None:
     assert tron_runner.runner_url("https://example.com/tron") == f"wss://example.com/tron{tron_runner.RUNNER_CHANNEL_ADDRESS}"
     with pytest.raises(ValueError):
         tron_runner.runner_url("ftp://example.com")
-
-
-def test_supported_protocol_version_is_the_published_documents() -> None:
-    document = Path(__file__).resolve().parents[3] / "protocol" / "asyncapi.json"
-    if not document.exists():
-        pytest.skip("not running inside the tron-runner-sdk repository")
-    published = json.loads(document.read_text(encoding="utf-8"))
-    assert tron_runner.PROTOCOL_VERSION == published["info"]["x-runner-protocol-version"]
-    assert tron_runner.PROTOCOL_DOCUMENT_VERSION == published["info"]["version"]
 
 
 def test_bad_token_is_a_typed_error_and_is_not_retried(tmp_path: Path) -> None:
@@ -150,8 +146,9 @@ def test_announces_accepts_persists_before_running_and_reports_ok(tmp_path: Path
             assert announcement.protocol_version is protocol.RunnerProtocolVersion(tron_runner.PROTOCOL_VERSION)
             assert stored_when_run == [SECRET]
             [report] = reports(tron)
-            assert report["secret"] == SECRET
-            assert report["outcome"] == {"ok": "all good"}
+            assert report.delivery_id == delivery_id
+            assert report.secret == SECRET
+            assert report.outcome == protocol.RunOutcome(ok="all good")
             assert recorded == [RecordedReport(delivery_id, False)]
             assert await store.pending() == []
 
@@ -171,7 +168,7 @@ def test_handler_exception_is_reported_as_err(tmp_path: Path) -> None:
             runner.register("h", handler)
             async with runner:
                 await done.wait()
-            assert reports(tron)[0]["outcome"] == {"err": "RuntimeError: boom"}
+            assert reports(tron)[0].outcome == protocol.RunOutcome(err="RuntimeError: boom")
 
     run(scenario)
 
@@ -184,8 +181,8 @@ def test_refused_accept_is_typed_and_the_handler_is_not_run(tmp_path: Path) -> N
             async def on_announced(connection: ServerConnection, number: int) -> None:
                 await connection.send(work(delivery_id))
 
-            async def on_frame(connection: ServerConnection, document: dict[str, Any]) -> None:
-                if document["type"] == "accept":
+            async def on_frame(connection: ServerConnection, received: RunnerFrame) -> None:
+                if isinstance(received, protocol.AcceptFrame):
                     await connection.send(accept_refused(delivery_id, protocol.AcceptRefusal.DELIVERY_TIMED_OUT))
 
             tron.on_announced, tron.on_frame = on_announced, on_frame
@@ -261,10 +258,10 @@ def test_stop_waits_for_the_handler_and_the_report_acknowledgement(tmp_path: Pat
             async def on_announced(connection: ServerConnection, number: int) -> None:
                 await connection.send(work(delivery_id))
 
-            async def on_frame(connection: ServerConnection, document: dict[str, Any]) -> None:
-                if document["type"] == "accept":
+            async def on_frame(connection: ServerConnection, received: RunnerFrame) -> None:
+                if isinstance(received, protocol.AcceptFrame):
                     await connection.send(accepted(delivery_id, SECRET))
-                elif document["type"] == "report":
+                elif isinstance(received, protocol.ReportFrame):
                     await asyncio.sleep(0.4)
                     await connection.send(report_recorded(delivery_id))
 
@@ -303,7 +300,73 @@ def test_several_handlers_cannot_route_a_delivery_so_it_is_not_accepted(tmp_path
                 while not errors:
                     await asyncio.sleep(0.01)
             assert isinstance(errors[0], UnroutableDeliveryError)
-            assert [document for document in tron.received if document["type"] == "accept"] == []
+            assert accepts(tron) == []
+
+    run(scenario)
+
+
+def test_a_work_frame_with_an_unparseable_timestamp_is_reported_and_the_runner_reconnects(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        async with FakeTron() as tron:
+
+            async def on_announced(connection: ServerConnection, number: int) -> None:
+                if number == 1:
+                    await connection.send(work(uuid4(), scheduled_for="not a timestamp"))
+
+            tron.on_announced = on_announced
+            errors: list[TronRunnerError] = []
+            runner = Runner(tron.url, "good", secret_store=FileSecretStore(tmp_path), on_error=errors.append)
+            runner.register("h", handler_ok)
+            async with runner:
+                while tron.connections < 2:
+                    await asyncio.sleep(0.01)
+            assert isinstance(errors[0], MalformedFrameError)
+            assert accepts(tron) == []
+
+    run(scenario)
+
+
+def test_an_unexpected_failure_while_connecting_ends_start_with_a_typed_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def explode(*_: object) -> None:
+        raise ValueError("unexpected")
+
+    monkeypatch.setattr(Runner, "_on_frame", explode)
+
+    async def scenario() -> None:
+        async with FakeTron() as tron:
+            runner = Runner(tron.url, "good", secret_store=FileSecretStore(tmp_path))
+            runner.register("h", handler_ok)
+            with pytest.raises(RunnerCrashedError) as raised:
+                await runner.start()
+            assert isinstance(raised.value.__cause__, ValueError)
+
+    run(scenario)
+
+
+def test_an_unexpected_failure_after_connecting_is_reported_and_wait_closed_raises_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def explode(*_: object) -> None:
+        raise ValueError("unexpected")
+
+    monkeypatch.setattr(Runner, "_on_work", explode)
+
+    async def scenario() -> None:
+        async with FakeTron() as tron:
+
+            async def on_announced(connection: ServerConnection, number: int) -> None:
+                await connection.send(work(uuid4()))
+
+            tron.on_announced = on_announced
+            errors: list[TronRunnerError] = []
+            runner = Runner(tron.url, "good", secret_store=FileSecretStore(tmp_path), on_error=errors.append)
+            runner.register("h", handler_ok)
+            await runner.start()
+            with pytest.raises(RunnerCrashedError):
+                await runner.wait_closed()
+            assert isinstance(errors[-1], RunnerCrashedError)
 
     run(scenario)
 

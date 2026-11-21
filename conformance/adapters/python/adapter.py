@@ -9,6 +9,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any, Protocol
 from urllib.parse import urlsplit, urlunsplit
 from uuid import UUID
 
@@ -22,6 +23,7 @@ from tron_runner import (  # noqa: E402
     Delivery,
     Err,
     FileSecretStore,
+    Handler,
     Ok,
     Outcome,
     RecordedReport,
@@ -41,8 +43,12 @@ COMMAND_DECODERS = {
 assert set(COMMAND_DECODERS) == set(protocol.AdapterCommandKind), "an adapter command is not decoded"
 
 
-def emit(event: object) -> None:
-    sys.stdout.write(json.dumps(event.to_dict()) + "\n")  # type: ignore[attr-defined]
+class Event(Protocol):
+    def to_dict(self) -> dict[str, Any]: ...
+
+
+def emit(event: Event) -> None:
+    sys.stdout.write(json.dumps(event.to_dict()) + "\n")
     sys.stdout.flush()
 
 
@@ -114,7 +120,7 @@ def on_report_recorded(recorded: RecordedReport) -> None:
     )
 
 
-def scripted(script: protocol.HandlerScript):  # type: ignore[no-untyped-def]
+def scripted(script: protocol.HandlerScript) -> Handler:
     async def handle(delivery: Delivery) -> Outcome:
         emit(
             protocol.HandlerInvokedEvent(

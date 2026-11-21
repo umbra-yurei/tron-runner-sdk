@@ -26,6 +26,7 @@ from .errors import (
     MissingSecretError,
     ProtocolViolationError,
     ReportRejectedError,
+    RunnerCrashedError,
     SecretStoreError,
     TronRunnerError,
     UnreachableError,
@@ -115,7 +116,7 @@ class Runner:
         self._session: _Session | None = None
         self._ever_connected = False
         self._stopping = False
-        self._fatal: ConnectError | None = None
+        self._fatal: TronRunnerError | None = None
         self._supervisor: asyncio.Task[None] | None = None
         self._first: asyncio.Future[None] | None = None
         # Deliveries from `work` (or a report of an earlier process) until Tron's final answer.
@@ -209,17 +210,23 @@ class Runner:
             try:
                 reached_announced = await self._connection(first)
             except ConnectError as error:
-                if first.done():
-                    self._fatal = error
-                    self._emit_error(error)
-                else:
-                    first.set_exception(error)
-                self._pulse()
+                self._fail(first, error)
+                return
+            except Exception as error:
+                self._fail(first, RunnerCrashedError(error))
                 return
             if reached_announced:
                 backoff = BACKOFF_INITIAL_SECONDS
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, BACKOFF_MAX_SECONDS)
+
+    def _fail(self, first: asyncio.Future[None], error: TronRunnerError) -> None:
+        if first.done():
+            self._fatal = error
+            self._emit_error(error)
+        else:
+            first.set_exception(error)
+        self._pulse()
 
     async def _connection(self, first: asyncio.Future[None]) -> bool:
         """One connection from handshake to loss. Returns whether the announcement was acknowledged."""
@@ -461,4 +468,7 @@ async def _run_handler(handler: Handler, delivery: Delivery) -> Outcome:
 
 
 def _timestamp(value: str) -> datetime:
-    return datetime.fromisoformat(value)
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError as error:
+        raise MalformedFrameError(f"not an RFC 3339 timestamp: {value!r}") from error

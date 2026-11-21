@@ -42,7 +42,7 @@ testpaths = ["tests"]
 
 [tool.mypy]
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "../../conformance/adapters/python"]
 
 [[tool.mypy.overrides]]
 module = "tron_runner.generated.*"

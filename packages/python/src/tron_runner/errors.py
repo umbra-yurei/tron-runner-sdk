@@ -88,6 +88,14 @@ class MalformedFrameError(TronRunnerError):
     """Tron sent something that is not a frame of the supported protocol version."""
 
 
+class RunnerCrashedError(TronRunnerError):
+    """The connection supervisor hit an unexpected exception and stopped; the original is `__cause__`."""
+
+    def __init__(self, cause: Exception) -> None:
+        super().__init__(f"the runner stopped on an unexpected {type(cause).__name__}: {cause}")
+        self.__cause__ = cause
+
+
 class DeliveryLostError(TronRunnerError):
     """The connection ended after `accept` was sent and before Tron answered; the delivery is abandoned."""
 

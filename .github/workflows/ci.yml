@@ -52,9 +52,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e "packages/python[dev]"
-      # Strict types over the SDK and its tests, then unit tests against a scripted Tron channel built from
-      # the generated frames. Importing the SDK fails if the protocol gained a frame it does not decode, and a
-      # test pins its supported protocol version to protocol/asyncapi.json.
+      # Strict types over the SDK, its tests and the conformance adapter, then unit tests against a scripted
+      # Tron channel built from the generated frames. Importing the SDK fails if the protocol gained a frame it
+      # does not decode; stale generated bindings fail `npm run check:generated` in the check job.
       - run: mypy
         working-directory: packages/python
       - run: pytest
