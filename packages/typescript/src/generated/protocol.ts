@@ -571,7 +571,8 @@ export type StoppedEventType = "stopped";
 
 /**
  * A run has been dispatched to this connection as one delivery. It
- * carries no job input or payload: only ids, the job's name and times.
+ * carries no job input or payload: only ids, the job's name, the handler
+ * key it was dispatched for and times.
  */
 export interface WorkFrame {
     /**
@@ -583,6 +584,7 @@ export interface WorkFrame {
      * Names this delivery; echo it in `accept` and `report`.
      */
     delivery_id: string;
+    handler_key: string;
     /**
      * The job that was triggered.
      */
@@ -1332,6 +1334,7 @@ const typeMap: any = {
     "WorkFrame": o([
         { json: "accept_deadline", js: "accept_deadline", typ: "" },
         { json: "delivery_id", js: "delivery_id", typ: "" },
+        { json: "handler_key", js: "handler_key", typ: "" },
         { json: "job_id", js: "job_id", typ: "" },
         { json: "job_name", js: "job_name", typ: "" },
         { json: "run_id", js: "run_id", typ: "" },

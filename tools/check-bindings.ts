@@ -110,6 +110,7 @@ const samples: Sample[] = [
       run_id: ids.run,
       job_id: ids.job,
       job_name: "nightly backup",
+      handler_key: "backup",
       scheduled_for: "2026-01-02T03:04:05Z",
       accept_deadline: "2026-01-02T03:04:35Z",
     }),

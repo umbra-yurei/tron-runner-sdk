@@ -613,7 +613,8 @@ namespace Cruma.Tron.Runner.Generated
 
     /// <summary>
     /// A run has been dispatched to this connection as one delivery. It
-    /// carries no job input or payload: only ids, the job's name and times.
+    /// carries no job input or payload: only ids, the job's name, the handler
+    /// key it was dispatched for and times.
     /// </summary>
     public partial class WorkFrame
     {
@@ -629,6 +630,9 @@ namespace Cruma.Tron.Runner.Generated
         /// </summary>
         [JsonPropertyName("delivery_id")]
         public Guid DeliveryId { get; set; }
+
+        [JsonPropertyName("handler_key")]
+        public string HandlerKey { get; set; }
 
         /// <summary>
         /// The job that was triggered.
