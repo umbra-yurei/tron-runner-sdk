@@ -10,30 +10,26 @@ Needs Node 22 or newer (it uses the built-in `WebSocket`). No runtime dependenci
 npm install @cruma-io/tron-runner
 ```
 
+<!-- tron-runner-example:start -->
 ```ts
-import { err, FileSecretStore, ok, Runner } from "@cruma-io/tron-runner";
+import { FileSecretStore, ok, Runner } from "@cruma-io/tron-runner";
 
 const runner = new Runner({
-  url: "https://tron.example.com",
+  url: process.env.TRON_URL!,
   token: process.env.TRON_WORKER_KEY!,
-  secretStore: new FileSecretStore("./.tron-secrets"),
-  concurrencyCapacity: 4,
+  secretStore: new FileSecretStore(process.env.TRON_SECRET_DIR!),
 });
 
-runner.handle("nightly-backup", async (delivery) => {
-  try {
-    await backup(delivery.jobName);
-    return ok("backup finished");
-  } catch (error) {
-    return err(String(error));
-  }
+runner.handle("send-report", (delivery) => {
+  // Ok marks the run succeeded and Err marks it failed; both carry a message.
+  return ok(`sent the report for ${delivery.jobName}`);
 });
 
-runner.on("error", (error) => console.error(error.kind, error.message)); // kind is the closed RunnerErrorKind union
-
-await runner.start(); // rejects with a typed error if Tron is unreachable or refuses the key
-process.on("SIGTERM", () => void runner.stop()); // drains in-flight work first
+await runner.start();
+// ... keep the process alive; when it is told to shut down:
+await runner.stop(); // finish in-flight work, report it, then close
 ```
+<!-- tron-runner-example:end -->
 
 ## What it does
 

@@ -32,12 +32,13 @@ def frame(document: Any) -> str:
     return json.dumps(document.to_dict())
 
 
-def work(delivery_id: UUID, *, scheduled_for: str = "2030-01-01T00:00:00Z") -> str:
+def work(delivery_id: UUID, *, scheduled_for: str = "2030-01-01T00:00:00Z", handler_key: str = "backup") -> str:
     return frame(
         protocol.WorkFrame(
             accept_deadline="2030-01-01T00:00:30.123456789Z",
             delivery_id=delivery_id,
             handler_key="backup",
+            handler_key=handler_key,
             job_id=uuid4(),
             job_name="nightly",
             run_id=uuid4(),

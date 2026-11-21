@@ -387,3 +387,46 @@ def test_file_secret_store_keeps_one_private_file_per_delivery(tmp_path: Path) -
         assert await store.pending() == [second]
 
     run(scenario)
+
+
+def test_documented_example_runs_a_delivery_and_reports_it(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def scenario() -> None:
+        delivery_id = uuid4()
+        async with FakeTron() as tron:
+            serve_one_delivery(tron, delivery_id)
+
+            monkeypatch.setenv("TRON_URL", tron.url)
+            monkeypatch.setenv("TRON_WORKER_KEY", "good")
+            monkeypatch.setenv("TRON_SECRET_DIR", str(tmp_path / "secrets"))
+
+            # docs:start
+            import os
+
+            from tron_runner import Delivery, FileSecretStore, Ok, Outcome, Runner
+
+            runner = Runner(
+                os.environ["TRON_URL"],
+                os.environ["TRON_WORKER_KEY"],
+                secret_store=FileSecretStore(os.environ["TRON_SECRET_DIR"]),
+            )
+
+            async def send_report(delivery: Delivery) -> Outcome:
+                # Ok marks the run succeeded and Err marks it failed; both carry a message.
+                return Ok(f"sent the report for {delivery.job_name}")
+
+            runner.register("send-report", send_report)
+            async with runner:
+                ...  # keep the process alive; leaving this block finishes in-flight work, reports it, then closes
+                # docs:hide
+                while not reports(tron):
+                    await asyncio.sleep(0.01)
+                # docs:show
+            # docs:end
+
+            assert tron.announcements[0].handler_keys == ["send-report"]
+            [report] = reports(tron)
+            assert report.delivery_id == delivery_id
+            assert report.secret == SECRET
+            assert report.outcome == protocol.RunOutcome(ok="sent the report for nightly")
+
+    run(scenario)
