@@ -165,8 +165,8 @@ impl RunnerBuilder {
         self
     }
 
-    #[cfg(test)]
-    pub(crate) fn trust_root(mut self, root: rustls::pki_types::CertificateDer<'static>) -> Self {
+    /// Trusts `root` (DER) in addition to the bundled public roots, for a Tron served under a private certificate authority.
+    pub fn trust_root(mut self, root: rustls::pki_types::CertificateDer<'static>) -> Self {
         self.extra_roots.push(root);
         self
     }

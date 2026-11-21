@@ -25,6 +25,7 @@ npm run sync:protocol     # refresh protocol/ from a Tron checkout (TRON_DIR=../
 npm run check:bindings    # build each language's generated bindings with its own toolchain and round-trip sample messages
 npm run check:protocol    # fail if protocol/ has drifted from Tron
 npm run conformance       # run every adapter against a real Tron; see conformance/README.md
+npm run conformance:release   # the release gate: packed SDKs, containerised Tron, over wss://; see docs/RELEASING.md
 ```
 
 The Python SDK's checks are `mypy` and `pytest` in `packages/python` (CI job `python-sdk`); see

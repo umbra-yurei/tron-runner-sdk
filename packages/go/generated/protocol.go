@@ -497,6 +497,16 @@ func (r *StoppedEvent) Marshal() ([]byte, error) {
 	return json.Marshal(r)
 }
 
+func UnmarshalUnknownHandlerEvent(data []byte) (UnknownHandlerEvent, error) {
+	var r UnknownHandlerEvent
+	err := json.Unmarshal(data, &r)
+	return r, err
+}
+
+func (r *UnknownHandlerEvent) Marshal() ([]byte, error) {
+	return json.Marshal(r)
+}
+
 func UnmarshalWorkFrame(data []byte) (WorkFrame, error) {
 	var r WorkFrame
 	err := json.Unmarshal(data, &r)
@@ -806,6 +816,14 @@ type StoppedEvent struct {
 	Type StoppedEventType `json:"type"`
 }
 
+// The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it
+// has no handler for. It did not run a handler.
+type UnknownHandlerEvent struct {
+	DeliveryID string                  `json:"delivery_id"`
+	HandlerKey string                  `json:"handler_key"`
+	Type       UnknownHandlerEventType `json:"type"`
+}
+
 // A run has been dispatched to this connection as one delivery. It
 // carries no job input or payload: only ids, the job's name, the handler
 // key it was dispatched for and times.
@@ -895,6 +913,7 @@ const (
 	AdapterEventKindReportRecorded   AdapterEventKind = "report_recorded"
 	AdapterEventKindReportRejected   AdapterEventKind = "report_rejected"
 	AdapterEventKindStopped          AdapterEventKind = "stopped"
+	AdapterEventKindUnknownHandler   AdapterEventKind = "unknown_handler"
 )
 
 // A version of the runner protocol defined by Tron.
@@ -1115,6 +1134,12 @@ type StoppedEventType string
 
 const (
 	TypeStopped StoppedEventType = "stopped"
+)
+
+type UnknownHandlerEventType string
+
+const (
+	TypeUnknownHandler UnknownHandlerEventType = "unknown_handler"
 )
 
 type WorkFrameType string

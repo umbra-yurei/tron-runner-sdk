@@ -15,6 +15,7 @@ import {
   ReportRejectedError,
   Runner,
   SDK_VERSION,
+  UnknownHandlerError,
   UnreachableError,
   type SecretStore,
 } from "../../../packages/typescript/src/index.ts";
@@ -87,6 +88,7 @@ function build(command: StartCommand): Runner {
   runner.on("error", (error) => {
     if (error instanceof AcceptRefusedError) emit({ type: "accept_refused", delivery_id: error.deliveryId, reason: error.reason });
     else if (error instanceof ReportRejectedError) emit({ type: "report_rejected", delivery_id: error.deliveryId, reason: error.reason });
+    else if (error instanceof UnknownHandlerError) emit({ type: "unknown_handler", delivery_id: error.deliveryId, handler_key: error.handlerKey });
     else fail(error);
   });
   return runner;

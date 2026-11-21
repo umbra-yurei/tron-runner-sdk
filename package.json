@@ -15,6 +15,7 @@
     "check:adr2": "node tools/check-adr2.ts && node --test tools/adr2-gate/gate.test.ts",
     "check": "npm run check:generated && npm run typecheck && npm run check:adr2",
     "conformance": "node conformance/run.ts",
+    "conformance:release": "node conformance/release/run.ts",
     "check:bindings": "node tools/check-bindings.ts",
     "build:typescript": "npm run build --prefix packages/typescript",
     "test:typescript": "node --test \"packages/typescript/test/*.test.ts\"",

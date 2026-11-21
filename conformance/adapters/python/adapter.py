@@ -30,6 +30,7 @@ from tron_runner import (  # noqa: E402
     ReportRejectedError,
     Runner,
     TronRunnerError,
+    UnknownHandlerError,
     __version__,
 )
 from tron_runner.generated import protocol  # noqa: E402
@@ -98,6 +99,12 @@ def on_error(error: TronRunnerError) -> None:
         emit(
             protocol.ReportRejectedEvent(
                 delivery_id=error.delivery_id, reason=error.reason, type=protocol.ReportRejectedEventType.REPORT_REJECTED
+            )
+        )
+    elif isinstance(error, UnknownHandlerError):
+        emit(
+            protocol.UnknownHandlerEvent(
+                delivery_id=error.delivery_id, handler_key=error.handler_key, type=protocol.UnknownHandlerEventType.UNKNOWN_HANDLER
             )
         )
     else:

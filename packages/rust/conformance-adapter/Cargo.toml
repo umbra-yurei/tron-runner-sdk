@@ -8,6 +8,7 @@ description = "Exposes the cruma-tron-runner SDK to the shared conformance suite
 [dependencies]
 async-trait = "0.1"
 cruma-tron-runner = { path = ".." }
+rustls-pki-types = "1"
 serde = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "time"] }

@@ -623,6 +623,22 @@ namespace Cruma.Tron.Runner.Generated
     }
 
     /// <summary>
+    /// The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it
+    /// has no handler for. It did not run a handler.
+    /// </summary>
+    public partial class UnknownHandlerEvent
+    {
+        [JsonPropertyName("delivery_id")]
+        public Guid DeliveryId { get; set; }
+
+        [JsonPropertyName("handler_key")]
+        public string HandlerKey { get; set; }
+
+        [JsonPropertyName("type")]
+        public UnknownHandlerEventType Type { get; set; }
+    }
+
+    /// <summary>
     /// A run has been dispatched to this connection as one delivery. It
     /// carries no job input or payload: only ids, the job's name, the handler
     /// key it was dispatched for and times.
@@ -704,7 +720,7 @@ namespace Cruma.Tron.Runner.Generated
     /// The `type` tag of every event an adapter writes, one JSON object per line on its standard
     /// output.
     /// </summary>
-    public enum AdapterEventKindEnum { AcceptRefused, ConnectFailed, Connected, DeliveryAccepted, Error, HandlerInvoked, Pending, Ready, ReportRecorded, ReportRejected, Stopped };
+    public enum AdapterEventKindEnum { AcceptRefused, ConnectFailed, Connected, DeliveryAccepted, Error, HandlerInvoked, Pending, Ready, ReportRecorded, ReportRejected, Stopped, UnknownHandler };
 
     /// <summary>
     /// A version of the runner protocol defined by Tron.
@@ -807,6 +823,8 @@ namespace Cruma.Tron.Runner.Generated
     public enum StopCommandType { Stop };
 
     public enum StoppedEventType { Stopped };
+
+    public enum UnknownHandlerEventType { UnknownHandler };
 
     public enum WorkFrameType { Work };
 
@@ -1055,6 +1073,11 @@ namespace Cruma.Tron.Runner.Generated
         public static StoppedEvent FromJson(string json) => JsonSerializer.Deserialize<StoppedEvent>(json, Cruma.Tron.Runner.Generated.Converter.Settings);
     }
 
+    public partial class UnknownHandlerEvent
+    {
+        public static UnknownHandlerEvent FromJson(string json) => JsonSerializer.Deserialize<UnknownHandlerEvent>(json, Cruma.Tron.Runner.Generated.Converter.Settings);
+    }
+
     public partial class WorkFrame
     {
         public static WorkFrame FromJson(string json) => JsonSerializer.Deserialize<WorkFrame>(json, Cruma.Tron.Runner.Generated.Converter.Settings);
@@ -1111,6 +1134,7 @@ namespace Cruma.Tron.Runner.Generated
         public static string ToJson(this StartCommand self) => JsonSerializer.Serialize(self, Cruma.Tron.Runner.Generated.Converter.Settings);
         public static string ToJson(this StopCommand self) => JsonSerializer.Serialize(self, Cruma.Tron.Runner.Generated.Converter.Settings);
         public static string ToJson(this StoppedEvent self) => JsonSerializer.Serialize(self, Cruma.Tron.Runner.Generated.Converter.Settings);
+        public static string ToJson(this UnknownHandlerEvent self) => JsonSerializer.Serialize(self, Cruma.Tron.Runner.Generated.Converter.Settings);
         public static string ToJson(this WorkFrame self) => JsonSerializer.Serialize(self, Cruma.Tron.Runner.Generated.Converter.Settings);
     }
 
@@ -1156,6 +1180,7 @@ namespace Cruma.Tron.Runner.Generated
                 StartCommandTypeConverter.Singleton,
                 StopCommandTypeConverter.Singleton,
                 StoppedEventTypeConverter.Singleton,
+                UnknownHandlerEventTypeConverter.Singleton,
                 WorkFrameTypeConverter.Singleton,
                 new DateOnlyConverter(),
                 new TimeOnlyConverter(),
@@ -1386,6 +1411,8 @@ namespace Cruma.Tron.Runner.Generated
                     return AdapterEventKindEnum.ReportRejected;
                 case "stopped":
                     return AdapterEventKindEnum.Stopped;
+                case "unknown_handler":
+                    return AdapterEventKindEnum.UnknownHandler;
             }
             throw new Exception("Cannot unmarshal type AdapterEventKindEnum");
         }
@@ -1426,6 +1453,9 @@ namespace Cruma.Tron.Runner.Generated
                     return;
                 case AdapterEventKindEnum.Stopped:
                     JsonSerializer.Serialize(writer, "stopped", options);
+                    return;
+                case AdapterEventKindEnum.UnknownHandler:
+                    JsonSerializer.Serialize(writer, "unknown_handler", options);
                     return;
             }
             throw new Exception("Cannot marshal type AdapterEventKindEnum");
@@ -2312,6 +2342,33 @@ namespace Cruma.Tron.Runner.Generated
         }
 
         public static readonly StoppedEventTypeConverter Singleton = new StoppedEventTypeConverter();
+    }
+
+    internal class UnknownHandlerEventTypeConverter : JsonConverter<UnknownHandlerEventType>
+    {
+        public override bool CanConvert(Type t) => t == typeof(UnknownHandlerEventType);
+
+        public override UnknownHandlerEventType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var value = reader.GetString();
+            if (value == "unknown_handler")
+            {
+                return UnknownHandlerEventType.UnknownHandler;
+            }
+            throw new Exception("Cannot unmarshal type UnknownHandlerEventType");
+        }
+
+        public override void Write(Utf8JsonWriter writer, UnknownHandlerEventType value, JsonSerializerOptions options)
+        {
+            if (value == UnknownHandlerEventType.UnknownHandler)
+            {
+                JsonSerializer.Serialize(writer, "unknown_handler", options);
+                return;
+            }
+            throw new Exception("Cannot marshal type UnknownHandlerEventType");
+        }
+
+        public static readonly UnknownHandlerEventTypeConverter Singleton = new UnknownHandlerEventTypeConverter();
     }
 
     internal class WorkFrameTypeConverter : JsonConverter<WorkFrameType>

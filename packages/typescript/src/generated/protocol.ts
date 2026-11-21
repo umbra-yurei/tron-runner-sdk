@@ -115,7 +115,7 @@ export interface AdapterEventTag {
  * The `type` tag of every event an adapter writes, one JSON object per line on its standard
  * output.
  */
-export type AdapterEventKind = "ready" | "connected" | "connect_failed" | "handler_invoked" | "delivery_accepted" | "accept_refused" | "report_recorded" | "report_rejected" | "pending" | "stopped" | "error";
+export type AdapterEventKind = "ready" | "connected" | "connect_failed" | "handler_invoked" | "delivery_accepted" | "accept_refused" | "unknown_handler" | "report_recorded" | "report_rejected" | "pending" | "stopped" | "error";
 
 /**
  * The contents of conformance/adapters.json.
@@ -577,6 +577,18 @@ export interface StoppedEvent {
 export type StoppedEventType = "stopped";
 
 /**
+ * The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it
+ * has no handler for. It did not run a handler.
+ */
+export interface UnknownHandlerEvent {
+    delivery_id: string;
+    handler_key: string;
+    type:        UnknownHandlerEventType;
+}
+
+export type UnknownHandlerEventType = "unknown_handler";
+
+/**
  * A run has been dispatched to this connection as one delivery. It
  * carries no job input or payload: only ids, the job's name, the handler
  * key it was dispatched for and times.
@@ -1009,6 +1021,14 @@ export class Convert {
         return JSON.stringify(uncast(value, r("StoppedEvent")), null, 2);
     }
 
+    public static toUnknownHandlerEvent(json: string): UnknownHandlerEvent {
+        return cast(JSON.parse(json), r("UnknownHandlerEvent"));
+    }
+
+    public static unknownHandlerEventToJson(value: UnknownHandlerEvent): string {
+        return JSON.stringify(uncast(value, r("UnknownHandlerEvent")), null, 2);
+    }
+
     public static toWorkFrame(json: string): WorkFrame {
         return cast(JSON.parse(json), r("WorkFrame"));
     }
@@ -1339,6 +1359,11 @@ const typeMap: any = {
     "StoppedEvent": o([
         { json: "type", js: "type", typ: r("StoppedEventType") },
     ], false),
+    "UnknownHandlerEvent": o([
+        { json: "delivery_id", js: "delivery_id", typ: "" },
+        { json: "handler_key", js: "handler_key", typ: "" },
+        { json: "type", js: "type", typ: r("UnknownHandlerEventType") },
+    ], false),
     "WorkFrame": o([
         { json: "accept_deadline", js: "accept_deadline", typ: "" },
         { json: "delivery_id", js: "delivery_id", typ: "" },
@@ -1384,6 +1409,7 @@ const typeMap: any = {
         "report_recorded",
         "report_rejected",
         "stopped",
+        "unknown_handler",
     ],
     "RunnerProtocolVersion": [
         "v1",
@@ -1490,6 +1516,9 @@ const typeMap: any = {
     ],
     "StoppedEventType": [
         "stopped",
+    ],
+    "UnknownHandlerEventType": [
+        "unknown_handler",
     ],
     "WorkFrameType": [
         "work",

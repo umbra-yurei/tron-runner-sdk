@@ -2,13 +2,21 @@
 // AUTH_MODE=dev) or attaches to one that is already running. Nothing here knows how
 // Tron is built: it only calls Tron's own Makefile targets.
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { mkdirSync, openSync } from "node:fs";
+import { mkdirSync, openSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient } from "./health.ts";
 
+/** The certificate the harness's own WebSocket proxies serve when Tron is reached over TLS. */
+export interface ProxyTls {
+  key: Buffer;
+  certificate: Buffer;
+}
+
 export interface Stack {
-  /** HTTP base URL, e.g. http://127.0.0.1:8090 */
+  /** HTTP(S) base URL, e.g. http://127.0.0.1:8090 */
   baseUrl: string;
+  /** Present when `TRON_URL` is https: proxies then also speak wss://, so reconnect and held-frame cases cross TLS. */
+  proxyTls?: ProxyTls;
   stop(): Promise<void>;
 }
 
@@ -23,7 +31,7 @@ export async function attachOrStart(repoRoot: string): Promise<Stack> {
   if (attach) {
     const baseUrl = attach.replace(/\/+$/, "");
     await waitHealthy(baseUrl, 30_000, undefined);
-    return { baseUrl, stop: async () => {} };
+    return { baseUrl, proxyTls: proxyTlsFromEnvironment(baseUrl), stop: async () => {} };
   }
 
   const tronDir = resolve(repoRoot, process.env.TRON_DIR ?? "../tron");
@@ -58,6 +66,18 @@ export async function attachOrStart(repoRoot: string): Promise<Stack> {
     throw error;
   }
   return { baseUrl, stop };
+}
+
+// The key and certificate (PEM files) an https `TRON_URL` run serves its proxies with; the certificate must chain to a root
+// the SDKs under test and this process already trust (`SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`).
+function proxyTlsFromEnvironment(baseUrl: string): ProxyTls | undefined {
+  if (!baseUrl.startsWith("https:")) return undefined;
+  const keyFile = process.env.TRON_PROXY_TLS_KEY_FILE;
+  const certificateFile = process.env.TRON_PROXY_TLS_CERT_FILE;
+  if (!keyFile || !certificateFile) {
+    throw new Error("an https TRON_URL needs TRON_PROXY_TLS_KEY_FILE and TRON_PROXY_TLS_CERT_FILE for the harness's proxies");
+  }
+  return { key: readFileSync(keyFile), certificate: readFileSync(certificateFile) };
 }
 
 async function waitHealthy(baseUrl: string, timeoutMs: number, logPath: string | undefined): Promise<void> {
