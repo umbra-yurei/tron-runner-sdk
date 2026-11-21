@@ -4,4 +4,8 @@ __pycache__/
 /conformance/.run
 /.binding-checks
 /packages/typescript/dist
+/packages/dotnet/**/bin/
+/packages/dotnet/**/obj/
+/packages/dotnet/adapter/out/
+/packages/dotnet/pack/
 /packages/rust/target

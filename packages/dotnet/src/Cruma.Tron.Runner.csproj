@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Cruma.Tron.Runner</RootNamespace>
+    <AssemblyName>Cruma.Tron.Runner</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The generated bindings document their members; hand-written public API must too, so CS1591 stays an error there. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PackageId>Cruma.Tron.Runner</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Cruma</Authors>
+    <Description>Runner SDK for Tron: connect with a worker API key, announce handlers, accept work, and report Ok or Err. Protocol messages are generated from Tron's published AsyncAPI document.</Description>
+    <PackageTags>tron;scheduler;runner;worker;websocket</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/umbra-yurei/tron-runner-sdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/umbra-yurei/tron-runner-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../../LICENSE" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Cruma.Tron.Runner.Tests" />
+  </ItemGroup>
+</Project>

@@ -16,7 +16,9 @@
     "conformance": "node conformance/run.ts",
     "check:bindings": "node tools/check-bindings.ts",
     "build:typescript": "npm run build --prefix packages/typescript",
-    "test:typescript": "node --test \"packages/typescript/test/*.test.ts\""
+    "test:typescript": "node --test \"packages/typescript/test/*.test.ts\"",
+    "build:dotnet-adapter": "dotnet build packages/dotnet/adapter -c Release -o packages/dotnet/adapter/out",
+    "test:dotnet": "dotnet test packages/dotnet/tests -c Release"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

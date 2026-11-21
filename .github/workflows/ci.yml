@@ -64,6 +64,19 @@ jobs:
           node --input-type=module -e "import { Runner, PROTOCOL_VERSION } from '@cruma-io/tron-runner'; if (typeof Runner !== 'function' || PROTOCOL_VERSION === '') process.exit(1)"
         working-directory: ${{ runner.temp }}
 
+  dotnet:
+    name: .NET package builds, passes its tests and packs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet build packages/dotnet/src -c Release
+      - run: dotnet test packages/dotnet/tests -c Release
+      - run: dotnet pack packages/dotnet/src -c Release -o packages/dotnet/pack
+      - run: dotnet build packages/dotnet/adapter -c Release -o packages/dotnet/adapter/out
+
   rust-sdk:
     name: Rust SDK builds, lints and is publishable
     runs-on: ubuntu-latest
