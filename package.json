@@ -7,8 +7,8 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "generate": "node tools/generate.ts",
-    "check:generated": "node tools/generate.ts --check",
+    "generate": "node tools/generate.ts && node tools/examples.ts",
+    "check:generated": "node tools/generate.ts --check && node tools/examples.ts --check",
     "check:protocol": "node tools/sync-protocol.ts --check",
     "sync:protocol": "node tools/sync-protocol.ts",
     "typecheck": "tsc --noEmit",

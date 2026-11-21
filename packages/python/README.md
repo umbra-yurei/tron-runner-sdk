@@ -9,26 +9,27 @@ pip install cruma-tron-runner
 
 Python 3.11 or newer. The only dependency is [`websockets`](https://websockets.readthedocs.io).
 
+<!-- tron-runner-example:start -->
 ```python
-import asyncio
+import os
+
 from tron_runner import Delivery, FileSecretStore, Ok, Outcome, Runner
 
 runner = Runner(
-    "https://tron.example.com",           # the Tron base URL
-    "<worker API key token>",             # created on Tron's Runners page
-    secret_store=FileSecretStore("/var/lib/my-runner/secrets"),
-    concurrency_capacity=4,
-    display_name="build box",
+    os.environ["TRON_URL"],
+    os.environ["TRON_WORKER_KEY"],
+    secret_store=FileSecretStore(os.environ["TRON_SECRET_DIR"]),
 )
 
-
-@runner.handler("send-report")            # the handler key a job targets
 async def send_report(delivery: Delivery) -> Outcome:
-    return Ok(f"sent for {delivery.job_name}")
+    # Ok marks the run succeeded and Err marks it failed; both carry a message.
+    return Ok(f"sent the report for {delivery.job_name}")
 
-
-asyncio.run(runner.run())
+runner.register("send-report", send_report)
+async with runner:
+    ...  # keep the process alive; leaving this block finishes in-flight work, reports it, then closes
 ```
+<!-- tron-runner-example:end -->
 
 ## What the SDK does
 
