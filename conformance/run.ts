@@ -4,6 +4,7 @@
 //   TRON_URL=http://127.0.0.1:8090 npm run conformance   attach to a running AUTH_MODE=dev Tron
 //   npm run conformance -- --adapter reference-typescript --scenario drains
 //   npm run conformance -- --list
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +50,18 @@ if (process.argv.includes("--list")) {
 if (adapters.length === 0 || selected.length === 0) {
   console.error("no adapter/scenario matches the filters");
   process.exit(2);
+}
+
+// Builds every selected adapter that declares a build step, once, before any scenario launches it.
+for (const adapter of adapters) {
+  if (!adapter.build) continue;
+  const [program, ...args] = adapter.build;
+  console.log(`build ${adapter.name}: ${adapter.build.join(" ")}`);
+  const built = spawnSync(program as string, args, { cwd: resolve(repoRoot, adapter.cwd), stdio: "inherit" });
+  if (built.status !== 0) {
+    console.error(`building adapter ${adapter.name} failed`);
+    process.exit(2);
+  }
 }
 
 const stack = await attachOrStart(repoRoot);

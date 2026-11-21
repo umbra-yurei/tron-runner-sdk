@@ -24,6 +24,12 @@
       "name": "rust",
       "command": ["cargo", "run", "--quiet", "--manifest-path", "packages/rust/Cargo.toml", "-p", "cruma-tron-runner-conformance-adapter"],
       "cwd": "."
+    },
+    {
+      "name": "go",
+      "build": ["go", "build", "-o", ".bin/conformance-adapter", "./conformance/adapter"],
+      "command": ["./.bin/conformance-adapter"],
+      "cwd": "packages/go"
     }
   ]
 }

@@ -26,16 +26,6 @@ def from_list(f: Callable[[Any], T], x: Any) -> List[T]:
     return [f(y) for y in x]
 
 
-def to_class(c: Type[T], x: Any) -> dict:
-    assert isinstance(x, c)
-    return cast(Any, x).to_dict()
-
-
-def from_int(x: Any) -> int:
-    assert isinstance(x, int) and not isinstance(x, bool)
-    return x
-
-
 def from_none(x: Any) -> Any:
     assert x is None
     return x
@@ -48,6 +38,16 @@ def from_union(fs, x):
         except:
             pass
     assert False
+
+
+def to_class(c: Type[T], x: Any) -> dict:
+    assert isinstance(x, c)
+    return cast(Any, x).to_dict()
+
+
+def from_int(x: Any) -> int:
+    assert isinstance(x, int) and not isinstance(x, bool)
+    return x
 
 
 def from_bool(x: Any) -> bool:
@@ -288,19 +288,28 @@ class AdapterRegistration:
     name: str
     """Name used by `--adapter` and in the report."""
 
+    build: Optional[List[str]] = None
+    """Optional program and arguments, run once from `cwd` before the adapter is first launched.
+    A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+    such as `go run` would leave an orphan child behind when the harness kills the adapter.
+    """
+
     @staticmethod
     def from_dict(obj: Any) -> 'AdapterRegistration':
         assert isinstance(obj, dict)
         command = from_list(from_str, obj.get("command"))
         cwd = from_str(obj.get("cwd"))
         name = from_str(obj.get("name"))
-        return AdapterRegistration(command, cwd, name)
+        build = from_union([lambda x: from_list(from_str, x), from_none], obj.get("build"))
+        return AdapterRegistration(command, cwd, name, build)
 
     def to_dict(self) -> dict:
         result: dict = {}
         result["command"] = from_list(from_str, self.command)
         result["cwd"] = from_str(self.cwd)
         result["name"] = from_str(self.name)
+        if self.build is not None:
+            result["build"] = from_union([lambda x: from_list(from_str, x), from_none], self.build)
         return result
 
 

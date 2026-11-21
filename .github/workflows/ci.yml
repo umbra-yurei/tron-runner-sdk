@@ -115,3 +115,20 @@ jobs:
       - run: cargo test --workspace --locked
       # Packages the crate as crates.io would and builds the packaged copy; does not upload.
       - run: cargo publish --dry-run --locked
+
+  go-sdk:
+    name: Go SDK is formatted, vets and passes its tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: packages/go/go.sum
+      # generated/ is emitted by quicktype and is checked by `npm run check`, not by gofmt.
+      - run: test -z "$(gofmt -l *.go conformance)"
+      - run: go vet ./...
+      - run: go test -race ./...

@@ -129,6 +129,12 @@ export interface AdapterRegistry {
  */
 export interface AdapterRegistration {
     /**
+     * Optional program and arguments, run once from `cwd` before the adapter is first launched.
+     * A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+     * such as `go run` would leave an orphan child behind when the harness kills the adapter.
+     */
+    build?: string[];
+    /**
      * Program and arguments, run from `cwd`.
      */
     command: string[];
@@ -1195,6 +1201,7 @@ const typeMap: any = {
         { json: "adapters", js: "adapters", typ: a(r("AdapterRegistration")) },
     ], false),
     "AdapterRegistration": o([
+        { json: "build", js: "build", typ: u(undefined, a("")) },
         { json: "command", js: "command", typ: a("") },
         { json: "cwd", js: "cwd", typ: "" },
         { json: "name", js: "name", typ: "" },
