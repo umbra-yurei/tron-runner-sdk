@@ -1,0 +1,5 @@
+const reader = JSON;
+const { parse } = JSON;
+export const viaGlobal = globalThis.JSON["parse"]("1");
+export const viaAlias = reader.parse("2");
+export const viaDestructured = parse("3");

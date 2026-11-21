@@ -73,6 +73,7 @@ class FakeTron {
         run_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
         job_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
         job_name: "nightly",
+        handler_key: "backup",
         scheduled_for: "2026-01-02T03:04:05Z",
         accept_deadline: "2026-01-02T03:04:35Z",
       }),
@@ -97,14 +98,14 @@ class FakeTron {
         }
         break;
       case "announce":
-        this.announcements.push(frame as AnnounceFrame);
+        this.announcements.push(frame);
         socket.send(Convert.announcedFrameToJson({ type: "announced" }));
         break;
       case "accept":
         socket.send(Convert.acceptedFrameToJson({ type: "accepted", delivery_id: frame.delivery_id, secret: SECRET }));
         break;
       case "report":
-        this.reports.push(frame as ReportFrame);
+        this.reports.push(frame);
         socket.send(
           this.reportAnswer === "recorded"
             ? Convert.reportRecordedFrameToJson({ type: "report_recorded", delivery_id: frame.delivery_id, late: false })

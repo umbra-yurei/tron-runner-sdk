@@ -1,0 +1,6 @@
+// A schema-generation helper.
+//
+// adr2-opaque-file: schema-generation input; the document is the thing being transformed, not a shape to decode
+export function read(raw: string): unknown {
+  return JSON.parse(raw);
+}

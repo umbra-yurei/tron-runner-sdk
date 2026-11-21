@@ -1,0 +1,3 @@
+export function isWork(value: unknown): value is { kind: "work" } {
+  return typeof value === "object" && value !== null;
+}
