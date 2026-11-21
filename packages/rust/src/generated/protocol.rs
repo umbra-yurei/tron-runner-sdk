@@ -183,6 +183,12 @@ pub struct AdapterRegistry {
 /// One SDK adapter the conformance runner can drive.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AdapterRegistration {
+    /// Optional program and arguments, run once from `cwd` before the adapter is first launched.
+    /// A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+    /// such as `go run` would leave an orphan child behind when the harness kills the adapter.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build: Option<Vec<String>>,
+
     /// Program and arguments, run from `cwd`.
     pub command: Vec<String>,
 

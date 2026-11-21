@@ -127,6 +127,15 @@ namespace Tron.RunnerSdk.Generated
     public partial class AdapterRegistration
     {
         /// <summary>
+        /// Optional program and arguments, run once from `cwd` before the adapter is first launched.
+        /// A compiled SDK builds its adapter here so `command` runs the binary itself: a wrapper
+        /// such as `go run` would leave an orphan child behind when the harness kills the adapter.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("build")]
+        public List<string> Build { get; set; }
+
+        /// <summary>
         /// Program and arguments, run from `cwd`.
         /// </summary>
         [JsonPropertyName("command")]

@@ -50,6 +50,6 @@ Contract for each message is in the schema's descriptions. In short:
 Incoming frames and commands are decoded with a generated tag probe (`Convert.toServerFrameTag`, `toAdapterCommandTag`)
 that reads only `type`, then dispatched to the generated decoder for that kind; there are no hand-written shapes.
 
-Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root). The
+Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root, and an optional `build` command the runner executes once from `cwd` before launching: a compiled SDK builds its adapter there, because a `go run`/`cargo run` wrapper would leave an orphan child when the harness kills the adapter). The
 reference adapter in `adapters/reference/` implements all of this on Node's WebSocket and is what keeps the harness
 itself tested.

@@ -4,6 +4,12 @@
       "name": "reference-typescript",
       "command": ["node", "conformance/adapters/reference/adapter.ts"],
       "cwd": "."
+    },
+    {
+      "name": "go",
+      "build": ["go", "build", "-o", ".bin/conformance-adapter", "./conformance/adapter"],
+      "command": ["./.bin/conformance-adapter"],
+      "cwd": "packages/go"
     }
   ]
 }
