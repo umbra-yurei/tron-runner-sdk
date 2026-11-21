@@ -806,13 +806,15 @@ type StoppedEvent struct {
 }
 
 // A run has been dispatched to this connection as one delivery. It
-// carries no job input or payload: only ids, the job's name and times.
+// carries no job input or payload: only ids, the job's name, the handler
+// key it was dispatched for and times.
 type WorkFrame struct {
 	// `accept` must arrive by this time. It is the push time plus the              
 	// job's delivery timeout.                                                      
 	AcceptDeadline                                                    string        `json:"accept_deadline"`
 	// Names this delivery; echo it in `accept` and `report`.                       
 	DeliveryID                                                        string        `json:"delivery_id"`
+	HandlerKey                                                        string        `json:"handler_key"`
 	// The job that was triggered.                                                  
 	JobID                                                             string        `json:"job_id"`
 	// The job's name, as the owner set it.                                         
