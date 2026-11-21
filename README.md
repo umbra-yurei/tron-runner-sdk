@@ -9,6 +9,7 @@ one published protocol schema and held to one conformance suite.
 | `contract/` | The language-neutral [thin-SDK contract](contract/sdk-contract.md) and the authored adapter protocol schema |
 | `tools/` | Reproducible generation (`generate.ts`) and drift checks (`sync-protocol.ts`) |
 | `packages/<language>/` | Each SDK; its `generated/` message bindings and recorded protocol version are emitted, never hand-written |
+| `packages/typescript/` | `@cruma-io/tron-runner`: build with `npm run build:typescript`, test with `npm run test:typescript` |
 | `conformance/` | The shared [conformance suite](conformance/README.md) and a reference adapter |
 
 Needs Node >= 22.18 (it runs the TypeScript tooling directly).
@@ -23,7 +24,7 @@ npm run check:protocol    # fail if protocol/ has drifted from Tron
 npm run conformance       # run every adapter against a real Tron; see conformance/README.md
 ```
 
-`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs only `check` and `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped).
+`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs `check`, `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped) and each package's own build and tests.
 
 ## Updating the protocol
 

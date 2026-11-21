@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run check:generated && npm run typecheck",
     "conformance": "node conformance/run.ts",
-    "check:bindings": "node tools/check-bindings.ts"
+    "check:bindings": "node tools/check-bindings.ts",
+    "build:typescript": "npm run build --prefix packages/typescript",
+    "test:typescript": "node --test \"packages/typescript/test/*.test.ts\""
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

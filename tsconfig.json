@@ -13,5 +13,5 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["tools", "conformance", "packages/typescript/src"]
+  "include": ["tools", "conformance", "packages/typescript/src", "packages/typescript/test"]
 }

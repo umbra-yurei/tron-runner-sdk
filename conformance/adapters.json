@@ -4,6 +4,11 @@
       "name": "reference-typescript",
       "command": ["node", "conformance/adapters/reference/adapter.ts"],
       "cwd": "."
+    },
+    {
+      "name": "typescript",
+      "command": ["node", "conformance/adapters/typescript/adapter.ts"],
+      "cwd": "."
     }
   ]
 }
