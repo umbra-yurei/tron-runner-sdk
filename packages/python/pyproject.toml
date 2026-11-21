@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cruma-tron-runner"
+dynamic = ["version"]
+description = "Run Tron jobs on your own machines: an async runner SDK for Tron's runner protocol"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Umbra-Yurei" }]
+keywords = ["tron", "scheduler", "runner", "jobs", "websocket"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dependencies = ["websockets>=14"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy>=1.13", "build>=1.2"]
+
+[project.urls]
+Homepage = "https://github.com/umbra-yurei/tron-runner-sdk"
+Repository = "https://github.com/umbra-yurei/tron-runner-sdk"
+
+[tool.hatch.version]
+path = "src/tron_runner/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tron_runner"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests", "../../conformance/adapters/python"]
+
+[[tool.mypy.overrides]]
+module = "tron_runner.generated.*"
+ignore_errors = true

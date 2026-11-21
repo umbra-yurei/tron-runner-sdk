@@ -25,6 +25,10 @@ npm run check:protocol    # fail if protocol/ has drifted from Tron
 npm run conformance       # run every adapter against a real Tron; see conformance/README.md
 ```
 
+The Python SDK's checks are `mypy` and `pytest` in `packages/python` (CI job `python-sdk`); see
+[`packages/python/README.md`](packages/python/README.md). Its conformance adapter runs from a virtualenv at
+`packages/python/.venv`: `python3 -m venv packages/python/.venv && packages/python/.venv/bin/pip install -e 'packages/python[dev]'`.
+
 `check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs `check`, `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped) and each package's own build and tests.
 
 ## Updating the protocol

@@ -11,6 +11,11 @@
       "cwd": "."
     },
     {
+      "name": "python",
+      "command": ["packages/python/.venv/bin/python", "conformance/adapters/python/adapter.py"],
+      "cwd": "."
+    },
+    {
       "name": "dotnet",
       "command": ["dotnet", "packages/dotnet/adapter/out/Cruma.Tron.Runner.ConformanceAdapter.dll"],
       "cwd": "."

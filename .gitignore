@@ -4,6 +4,9 @@ __pycache__/
 /conformance/.run
 /.binding-checks
 /packages/typescript/dist
+/packages/python/.venv
+/packages/python/dist
+*.egg-info
 /packages/dotnet/**/bin/
 /packages/dotnet/**/obj/
 /packages/dotnet/adapter/out/
