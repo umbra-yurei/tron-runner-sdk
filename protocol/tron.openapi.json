@@ -493,6 +493,16 @@
               }
             }
           },
+          "409": {
+            "description": "The owner already has the most live jobs allowed; delete one first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
           "500": {
             "description": "The database is unavailable",
             "content": {
@@ -841,6 +851,16 @@
               }
             }
           },
+          "409": {
+            "description": "Restoring would exceed the most live jobs the owner may have; delete one first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
+                }
+              }
+            }
+          },
           "500": {
             "description": "The database is unavailable",
             "content": {
@@ -876,6 +896,33 @@
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/RunListFilter"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Only runs in exactly this state. Combines with `filter` (both must\nhold).",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RunStatus"
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "description": "Only runs with a runner delivery that ended with this outcome.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/RunOutcomeKind"
+            }
+          },
+          {
+            "name": "message_contains",
+            "in": "query",
+            "description": "Only runs with a runner delivery whose result message contains this\ntext, ignoring case. At most 200 characters; an empty value is ignored.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -915,6 +962,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobRunPageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The result-message search text is longer than 200 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorBody"
                 }
               }
             }
@@ -2582,11 +2639,13 @@
           "invalid_worker_api_key_request",
           "invalid_admin_usage_range",
           "admin_scope_counts_too_large",
+          "invalid_run_search",
           "invalid_timing_range",
           "timing_range_too_large",
           "credential_generation_failed",
           "webhook_signing_secret_unavailable",
           "webhook_signing_secret_conflict",
+          "live_job_limit_reached",
           "database_unavailable"
         ]
       },
@@ -4360,12 +4419,13 @@
           },
           {
             "type": "object",
-            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name, the handler\nkey it was dispatched for and times.",
             "required": [
               "delivery_id",
               "run_id",
               "job_id",
               "job_name",
+              "handler_key",
               "scheduled_for",
               "accept_deadline",
               "type"
@@ -4380,6 +4440,10 @@
                 "type": "string",
                 "format": "uuid",
                 "description": "Names this delivery; echo it in `accept` and `report`."
+              },
+              "handler_key": {
+                "$ref": "#/components/schemas/RunnerHandlerKey",
+                "description": "The job's runner handler key. For a connection that announced\nhandler keys it is one of them; a connection that never announced\nreceives work for every key. A runner with several handlers runs\nthe one with this key."
               },
               "job_id": {
                 "type": "string",

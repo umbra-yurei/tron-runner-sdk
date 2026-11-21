@@ -123,7 +123,7 @@
         "work": {
           "name": "work",
           "title": "work",
-          "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+          "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name, the handler\nkey it was dispatched for and times.",
           "contentType": "application/json",
           "payload": {
             "$ref": "#/components/schemas/ServerMessage/oneOf/3"
@@ -555,12 +555,13 @@
           },
           {
             "type": "object",
-            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name and times.",
+            "description": "A run has been dispatched to this connection as one delivery. It\ncarries no job input or payload: only ids, the job's name, the handler\nkey it was dispatched for and times.",
             "required": [
               "delivery_id",
               "run_id",
               "job_id",
               "job_name",
+              "handler_key",
               "scheduled_for",
               "accept_deadline",
               "type"
@@ -575,6 +576,10 @@
                 "type": "string",
                 "format": "uuid",
                 "description": "Names this delivery; echo it in `accept` and `report`."
+              },
+              "handler_key": {
+                "$ref": "#/components/schemas/RunnerHandlerKey",
+                "description": "The job's runner handler key. For a connection that announced\nhandler keys it is one of them; a connection that never announced\nreceives work for every key. A runner with several handlers runs\nthe one with this key."
               },
               "job_id": {
                 "type": "string",

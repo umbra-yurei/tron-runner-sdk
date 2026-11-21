@@ -16,7 +16,8 @@ jobs:
           cache: npm
       - run: npm ci
       # Re-generates every language's bindings in memory and fails if a committed file differs;
-      # then type-checks the generator, the conformance harness and the reference adapter.
+      # type-checks the generator, the conformance harness and the reference adapter, then runs the
+      # ADR-2 structural gate (typed JSON boundaries) and its tests.
       - run: npm run check
 
   bindings-compile:

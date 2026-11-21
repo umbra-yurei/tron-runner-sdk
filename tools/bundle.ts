@@ -3,6 +3,8 @@
 // into one JSON Schema bundle of named definitions, which the per-language
 // generators consume. Nothing here knows a frame name: frames, closed value
 // sets and their tags are all read from the document.
+//
+// adr2-opaque-file: schema-generation input; the AsyncAPI and JSON Schema documents are the thing being transformed, so there is no fixed shape to generate a decoder from
 import { readFileSync } from "node:fs";
 
 export type Schema = { [key: string]: unknown };

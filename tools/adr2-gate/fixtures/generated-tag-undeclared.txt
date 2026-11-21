@@ -1,0 +1,14 @@
+import type { Tag } from "./generated/probe.ts";
+export function deliveryId(tag: Tag): string {
+  return tag.delivery_id;
+}
+export function viaKey(tag: Tag): string {
+  return tag["delivery_id"];
+}
+export function probe(tag: Tag): boolean {
+  return "delivery_id" in tag;
+}
+export function declared(tag: Tag): string {
+  return tag.type;
+}
+export const widen = (tag: Tag) => tag as unknown as { delivery_id: string };

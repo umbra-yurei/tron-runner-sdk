@@ -1,0 +1,6 @@
+interface Frame {
+  id: string;
+}
+export function frame(value: Frame | number): Frame {
+  return value as unknown as Frame;
+}
