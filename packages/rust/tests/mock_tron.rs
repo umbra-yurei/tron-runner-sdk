@@ -342,7 +342,8 @@ async fn each_delivery_is_routed_to_the_handler_registered_for_its_key() {
     assert_eq!(announce.announcement.handler_keys, ["a", "b"]);
     next_event(&mut events).await;
 
-    for (key, delivery) in [("a", "delivery-a"), ("b", "delivery-b")] {
+    for (key, delivery, expected_ok, expected_err) in [("a", "delivery-a", Some("from a"), None), ("b", "delivery-b", None, Some("from b"))]
+    {
         let mut frame = work(key);
         frame.delivery_id = delivery.into();
         send(&mut server, &frame).await;
@@ -359,16 +360,10 @@ async fn each_delivery_is_routed_to_the_handler_registered_for_its_key() {
         .await;
         let report: ReportFrame = receive_as(&mut server, RunnerFrameKind::Report).await;
         assert_eq!(report.delivery_id, delivery);
-        match key {
-            "a" => assert_eq!(
-                (report.outcome.ok.as_deref(), report.outcome.err.as_deref()),
-                (Some("from a"), None)
-            ),
-            _ => assert_eq!(
-                (report.outcome.ok.as_deref(), report.outcome.err.as_deref()),
-                (None, Some("from b"))
-            ),
-        }
+        assert_eq!(
+            (report.outcome.ok.as_deref(), report.outcome.err.as_deref()),
+            (expected_ok, expected_err)
+        );
         send(
             &mut server,
             &ReportRecordedFrame {
@@ -410,7 +405,8 @@ async fn a_delivery_for_an_unregistered_key_is_not_accepted() {
         loop {
             match server.next().await {
                 Some(Ok(Message::Text(text))) => {
-                    assert!(!text.contains("\"accept\""), "an accept frame was sent: {text}");
+                    let tag: RunnerFrameTag = serde_json::from_str(text.as_str()).unwrap();
+                    assert_ne!(tag.runner_frame_tag_type, RunnerFrameKind::Accept, "an accept frame was sent");
                 }
                 Some(Ok(_)) => {}
                 _ => break,
