@@ -7,13 +7,13 @@ from. Both are emitted into each package by `npm run generate`, so the table bel
 
 | SDK | Registry name | Version | Runner protocol | AsyncAPI document | Git tag | Published |
 | --- | --- | --- | --- | --- | --- | --- |
-| Rust | `cruma-tron-runner` (crates.io) | 0.1.1 | v1 | 0.1.0 | `packages/rust/v0.1.1` | not yet |
-| Python | `cruma-tron-runner` (PyPI) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
-| TypeScript | `@cruma-io/tron-runner` (npm) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
-| .NET | `Cruma.Tron.Runner` (NuGet) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | not yet |
-| Go | `github.com/umbra-yurei/tron-runner-sdk/packages/go` | 0.1.0 | v1 | 0.1.0 | `packages/go/v0.1.0` | not yet |
+| Rust | `cruma-tron-runner` (crates.io) | 0.1.1 | v1 | 0.1.0 | `packages/rust/v0.1.1` | 2026-11-21 |
+| Python | `cruma-tron-runner` (PyPI) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | 2026-11-21 |
+| TypeScript | `@cruma-io/tron-runner` (npm) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | 2026-11-21 |
+| .NET | `Cruma.Tron.Runner` (NuGet) | 0.1.0 | v1 | 0.1.0 | `v0.1.0` | 2026-11-21 |
+| Go | `github.com/umbra-yurei/tron-runner-sdk/packages/go` | 0.1.0 | v1 | 0.1.0 | `packages/go/v0.1.0` | 2026-11-21 |
 
-The "Published" column changes from "not yet" to the publish date in the commit that follows each publish.
+The "Published" column holds the publish date (UTC); the commit that follows each publish fills it in.
 
 ## Rust 0.1.1
 
@@ -21,7 +21,13 @@ Rust only; the other four SDKs stay at 0.1.0 and the protocol is unchanged (v1, 
 `wss://` connection: 0.1.0 enabled rustls without selecting a crypto provider, so every connection to an `https://` Tron
 ended in "Could not automatically determine the process-level CryptoProvider". The SDK now builds an explicit rustls
 configuration with the `ring` provider and the bundled root certificates, and a test performs a real TLS handshake. 0.1.0
-is to be yanked once 0.1.1 is live (`cargo yank --version 0.1.0 cruma-tron-runner`).
+is yanked (`cargo yank --version 0.1.0 cruma-tron-runner`), so new dependents resolve to 0.1.1.
+
+New public API: `RunnerBuilder::trust_root(CertificateDer<'static>)` trusts an extra root certificate (DER) in addition to
+the bundled public roots, for a Tron served under a private certificate authority. The conformance harness uses it to
+connect over `wss://` to a local Tron.
+
+The TypeScript package also has a `0.0.0-stage` placeholder on npm from the staged-publish attempt; `latest` is 0.1.0.
 
 ## 0.1.0
 
