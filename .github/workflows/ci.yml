@@ -43,6 +43,46 @@ jobs:
       # sample messages and re-encodes them; --require-all makes a missing toolchain a failure.
       - run: npm run check:bindings -- --require-all
 
+  typescript-sdk:
+    name: "@cruma-io/tron-runner builds, passes its tests and installs from its tarball"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.18
+          cache: npm
+      - run: npm ci
+      - run: npm run build:typescript
+      - run: npm run test:typescript
+      # The published artifact is the tarball: install it into an empty project and import it.
+      - run: npm pack --pack-destination "$RUNNER_TEMP"
+        working-directory: packages/typescript
+      - run: |
+          npm init -y
+          npm install "$RUNNER_TEMP"/cruma-io-tron-runner-*.tgz
+          node --input-type=module -e "import { Runner, PROTOCOL_VERSION } from '@cruma-io/tron-runner'; if (typeof Runner !== 'function' || PROTOCOL_VERSION === '') process.exit(1)"
+        working-directory: ${{ runner.temp }}
+
+  python-sdk:
+    name: Python SDK type-checks, passes its tests and builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e "packages/python[dev]"
+      # Strict types over the SDK, its tests and the conformance adapter, then unit tests against a scripted
+      # Tron channel built from the generated frames. Importing the SDK fails if the protocol gained a frame it
+      # does not decode; stale generated bindings fail `npm run check:generated` in the check job.
+      - run: mypy
+        working-directory: packages/python
+      - run: pytest
+        working-directory: packages/python
+      - run: python -m build
+        working-directory: packages/python
+
   dotnet:
     name: .NET package builds, passes its tests and packs
     runs-on: ubuntu-latest
