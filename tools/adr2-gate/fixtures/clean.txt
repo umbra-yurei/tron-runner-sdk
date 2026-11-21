@@ -22,3 +22,8 @@ export function discriminate(frame: AcceptFrame | { ok: true }): boolean {
   return "ok" in frame;
 }
 export const noise = "braces { and [ are fine } in prose";
+export function collect(): boolean {
+  const errors: unknown[] = [];
+  errors.push(new Error("x"));
+  return errors.length > 0 && errors[0] instanceof Error;
+}

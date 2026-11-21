@@ -4,6 +4,7 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanRepository } from "./adr2-gate/run.ts";
+import { render } from "./render.ts";
 
 // A ratchet: the number of `adr2-opaque` exception markers in the repository. A new exception
 // means raising this number in the same diff, where a reviewer sees it; removing one means
@@ -11,7 +12,8 @@ import { scanRepository } from "./adr2-gate/run.ts";
 const EXPECTED_EXCEPTIONS = 3;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const scan = scanRepository(root);
+const emitted = new Set((await render()).keys());
+const scan = scanRepository(root, emitted);
 const problems = scan.findings.map((finding) => `${finding.file}:${finding.line}  [${finding.rule}] ${finding.message}`);
 if (scan.exceptions !== EXPECTED_EXCEPTIONS) {
   problems.push(

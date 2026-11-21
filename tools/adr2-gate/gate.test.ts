@@ -48,9 +48,31 @@ describe("ADR-2 structural gate", () => {
     assert.deepEqual([...new Set(lines)], [1, 2, 3]);
   });
 
-  it("trusts index-signature tag probes declared in generated bindings", () => {
-    const generated: [string, string][] = [["conformance/generated/probe.ts", fixture("generated-probe")]];
-    assert.deepEqual(scan("generated-tag", generated).findings, []);
+  const probe: [string, string][] = [["conformance/generated/probe.ts", fixture("generated-probe")]];
+  const emitted = new Set(["conformance/generated/probe.ts"]);
+
+  it("trusts the declared fields of an emitted index-signature tag probe", () => {
+    assert.deepEqual(scanSources(root, new Map([["conformance/fixture.ts", fixture("generated-tag")], ...probe]), emitted).findings, []);
+  });
+
+  it("flags reading an undeclared field out of a generated tag probe, by dot, key or `in`", () => {
+    const result = scanSources(root, new Map([["conformance/fixture.ts", fixture("generated-tag-undeclared")], ...probe]), emitted);
+    assert.deepEqual(
+      result.findings.map((finding) => [finding.line, finding.rule]),
+      [[3, "untyped-access"], [6, "untyped-access"], [9, "untyped-access"], [14, "untyped-cast"], [14, "untyped-cast"]],
+    );
+  });
+
+  it("scans a hand-written file in a generated directory that the generator did not emit", () => {
+    const stray = scanSources(root, new Map([["conformance/generated/stray.ts", fixture("json-parse")]]), emitted);
+    assert.deepEqual(rulesOf(stray), ["any-returning-call", "json-global"]);
+    const emittedFile = scanSources(root, new Map([["conformance/generated/stray.ts", fixture("json-parse")]]), new Set(["conformance/generated/stray.ts"]));
+    assert.deepEqual(emittedFile.findings, []);
+  });
+
+  it("does not trust an index-signature tag probe the generator did not emit", () => {
+    const result = scanSources(root, new Map([["conformance/fixture.ts", fixture("generated-tag")], ...probe]));
+    assert.ok(result.findings.some((finding) => finding.file === "conformance/fixture.ts" && finding.rule === "untyped-access"));
   });
 
   it("lets a justified exception through, and flags unjustified or unused ones", () => {

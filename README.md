@@ -40,7 +40,7 @@ an `any`/`unknown` value that is cast or probed field by field, an ad-hoc `{ typ
 JSON string, or `JSON.stringify` of a literal. It reads types from the compiler, so aliasing or wrapping does not hide a
 violation. Genuinely opaque passthrough and schema-generation inputs may carry an `adr2-opaque` exception comment with a
 reason (see `tools/adr2-gate/gate.ts`); the number of exceptions is capped in `tools/check-adr2.ts`, so adding one is a
-visible change. The gate's own tests are in `tools/adr2-gate/`.
+visible change. Only the generator's exact output (the paths `tools/render.ts` emits) is exempt; any other script, even one inside a `generated/` directory, is scanned, and a generated tag probe's undeclared fields cannot be read. The gate's own tests are in `tools/adr2-gate/`.
 
 ## Updating the protocol
 

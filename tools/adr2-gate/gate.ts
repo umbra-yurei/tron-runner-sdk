@@ -64,27 +64,30 @@ function isOpaqueKeyword(node: ts.TypeNode | undefined): boolean {
   return node !== undefined && (node.kind === ts.SyntaxKind.UnknownKeyword || node.kind === ts.SyntaxKind.AnyKeyword);
 }
 
-// Directories that hold emitted bindings. `npm run check:generated` keeps them identical to what the
-// generator produces, and the generator's tag probes (`additionalProperties: true`) legitimately
-// carry an index signature, so a type declared there is trusted rather than judged.
-export const GENERATED_DIRECTORIES = ["generated", "Generated"] as const;
-
-function isGeneratedPath(path: string): boolean {
-  return path.split("/").some((part) => (GENERATED_DIRECTORIES as readonly string[]).includes(part));
-}
-
-function isDeclaredInGeneratedCode(type: ts.Type): boolean {
-  const declarations = (type.aliasSymbol ?? type.symbol)?.declarations ?? [];
-  return declarations.length > 0 && declarations.every((declaration) => isGeneratedPath(declaration.getSourceFile().fileName));
-}
-
 function isUntyped(checker: ts.TypeChecker, type: ts.Type, seen: Set<ts.Type> = new Set()): boolean {
   if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) return true;
-  if (seen.has(type) || isDeclaredInGeneratedCode(type)) return false;
+  if (seen.has(type)) return false;
   seen.add(type);
   if (type.isUnion()) return type.types.some((member) => isUntyped(checker, member, seen));
   if (checker.isArrayType(type)) return isUntyped(checker, checker.getTypeArguments(type as ts.TypeReference)[0] as ts.Type, seen);
   return checker.getIndexInfosOfType(type).some((info) => isUntyped(checker, info.type, seen));
+}
+
+/**
+ * Whether reading `member` (undefined: a computed key, or an `in` probe) out of a value of this type
+ * pulls an unchecked field out of an untyped tree. Arrays are not trees: their methods and elements
+ * are judged where the element value is used. The one trusted shape is a probe the generator itself
+ * emitted (`Convert.toServerFrameTag`, an `additionalProperties: true` schema, so an `any` index
+ * signature): its declared fields (`type`) may be read, anything else may not.
+ */
+function isUntypedAccess(checker: ts.TypeChecker, type: ts.Type, member: string | undefined, isEmitted: (path: string) => boolean): boolean {
+  if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) return true;
+  if (type.isUnion()) return type.types.some((candidate) => isUntypedAccess(checker, candidate, member, isEmitted));
+  if (checker.isArrayType(type) || checker.isTupleType(type)) return false;
+  if (!checker.getIndexInfosOfType(type).some((info) => isUntyped(checker, info.type))) return false;
+  const declarations = (type.aliasSymbol ?? type.symbol)?.declarations ?? [];
+  const emitted = declarations.length > 0 && declarations.every((declaration) => isEmitted(declaration.getSourceFile().fileName));
+  return !(emitted && member !== undefined && checker.getPropertyOfType(type, member) !== undefined);
 }
 
 function isLibraryJson(checker: ts.TypeChecker, program: ts.Program, node: ts.Node): boolean {
@@ -137,15 +140,21 @@ function collectExceptions(file: ts.SourceFile, findings: Finding[], relative: s
   return exceptions;
 }
 
-export function analyse(program: ts.Program, rootFiles: ReadonlySet<string>, relativeName: (path: string) => string): Scan {
+/**
+ * `emitted` is the exact set of repository-relative paths the generator writes. Those files are
+ * skipped (`check:generated` keeps them identical to its output); every other script is scanned,
+ * wherever it lives, including a hand-written file dropped into a `generated/` directory.
+ */
+export function analyse(program: ts.Program, rootFiles: ReadonlySet<string>, relativeName: (path: string) => string, emitted: ReadonlySet<string>): Scan {
   const checker = program.getTypeChecker();
+  const isEmitted = (path: string) => emitted.has(relativeName(path));
   const findings: Finding[] = [];
   let exceptionTotal = 0;
 
   for (const file of program.getSourceFiles()) {
     if (!rootFiles.has(file.fileName)) continue;
     const relative = relativeName(file.fileName);
-    if (isGeneratedPath(relative)) continue;
+    if (emitted.has(relative)) continue;
     const raw: { finding: Finding; node: ts.Node }[] = [];
     const exceptions = collectExceptions(file, findings, relative);
     exceptionTotal += exceptions.length;
@@ -199,10 +208,8 @@ export function analyse(program: ts.Program, rootFiles: ReadonlySet<string>, rel
       if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
         const args = node.typeArguments ?? [];
         if (node.typeName.text === "Record" && isOpaqueKeyword(args[1])) flagged(node, "untyped-json-type", "`Record<_, unknown|any>` is an untyped JSON object");
-        if (node.typeName.text === "Array" && isOpaqueKeyword(args[0])) flagged(node, "untyped-json-type", "`Array<unknown|any>` is an untyped JSON array");
       }
       if (ts.isMappedTypeNode(node) && isOpaqueKeyword(node.type)) flagged(node, "untyped-json-type", "a mapped type onto `unknown`/`any` is an untyped JSON object");
-      if (ts.isArrayTypeNode(node) && isOpaqueKeyword(node.elementType)) flagged(node, "untyped-json-type", "`unknown[]`/`any[]` is an untyped JSON array");
       if (ts.isTypePredicateNode(node) && ts.isIdentifier(node.parameterName)) {
         const signature = ts.findAncestor(node, ts.isFunctionLike);
         const declared = signature ? declaredTypeOfParameter(signature, node.parameterName.text) : undefined;
@@ -224,13 +231,18 @@ export function analyse(program: ts.Program, rootFiles: ReadonlySet<string>, rel
       }
 
       if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
-        if (isUntyped(checker, checker.getTypeAtLocation(node.expression))) {
+        const member = ts.isPropertyAccessExpression(node)
+          ? node.name.text
+          : ts.isStringLiteralLike(node.argumentExpression)
+            ? node.argumentExpression.text
+            : undefined;
+        if (isUntypedAccess(checker, checker.getTypeAtLocation(node.expression), member, isEmitted)) {
           flagged(node, "untyped-access", "reading a field out of an `any`/`unknown`/index-signature value: the shape is known, so type it");
         }
       }
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InKeyword && !ts.isPrivateIdentifier(node.left)) {
         const type = checker.getTypeAtLocation(node.right);
-        if (isUntyped(checker, type) || type.flags & ts.TypeFlags.NonPrimitive) {
+        if (isUntypedAccess(checker, type, undefined, isEmitted) || type.flags & ts.TypeFlags.NonPrimitive) {
           flagged(node, "untyped-access", "probing keys of an untyped object with `in`: the shape is known, so type it");
         }
       }
