@@ -21,6 +21,6 @@ registerHooks({
     const resolved = nextResolve(specifier, context);
     if (resolved.url !== from) return resolved;
     appendFileSync(log, `${from} -> ${to}\n`);
-    return { ...resolved, url: to };
+    return { url: to, shortCircuit: true };
   },
 });
