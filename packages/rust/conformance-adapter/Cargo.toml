@@ -1,0 +1,13 @@
+[package]
+name = "cruma-tron-runner-conformance-adapter"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Exposes the cruma-tron-runner SDK to the shared conformance suite (conformance/README.md)."
+
+[dependencies]
+async-trait = "0.1"
+cruma-tron-runner = { path = ".." }
+serde = "1"
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "time"] }

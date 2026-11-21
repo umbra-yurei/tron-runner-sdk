@@ -43,6 +43,58 @@ jobs:
       # sample messages and re-encodes them; --require-all makes a missing toolchain a failure.
       - run: npm run check:bindings -- --require-all
 
+  python-sdk:
+    name: Python SDK type-checks, passes its tests and builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e "packages/python[dev]"
+      # Strict types over the SDK, its tests and the conformance adapter, then unit tests against a scripted
+      # Tron channel built from the generated frames. Importing the SDK fails if the protocol gained a frame it
+      # does not decode; stale generated bindings fail `npm run check:generated` in the check job.
+      - run: mypy
+        working-directory: packages/python
+      - run: pytest
+        working-directory: packages/python
+      - run: python -m build
+        working-directory: packages/python
+
+  dotnet:
+    name: .NET package builds, passes its tests and packs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet build packages/dotnet/src -c Release
+      - run: dotnet test packages/dotnet/tests -c Release
+      - run: dotnet pack packages/dotnet/src -c Release -o packages/dotnet/pack
+      - run: dotnet build packages/dotnet/adapter -c Release -o packages/dotnet/adapter/out
+
+  rust-sdk:
+    name: Rust SDK builds, lints and is publishable
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/rust
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      # Packages the crate as crates.io would and builds the packaged copy; does not upload.
+      - run: cargo publish --dry-run --locked
+
   go-sdk:
     name: Go SDK is formatted, vets and passes its tests
     runs-on: ubuntu-latest

@@ -4,3 +4,11 @@ __pycache__/
 /conformance/.run
 /.binding-checks
 /packages/go/.bin
+/packages/python/.venv
+/packages/python/dist
+*.egg-info
+/packages/dotnet/**/bin/
+/packages/dotnet/**/obj/
+/packages/dotnet/adapter/out/
+/packages/dotnet/pack/
+/packages/rust/target
