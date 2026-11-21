@@ -151,7 +151,7 @@ class Runner:
         await self._first
 
     async def wait_closed(self) -> None:
-        """Wait until the runner has stopped; raises the `ConnectError` that ended it, if one did."""
+        """Wait until the runner has stopped; raises the `ConnectError` or `RunnerCrashedError` that ended it, if one did."""
         if self._supervisor is None:
             raise RuntimeError("the runner was not started")
         with contextlib.suppress(asyncio.CancelledError):

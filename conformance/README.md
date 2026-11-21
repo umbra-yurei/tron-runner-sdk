@@ -62,6 +62,8 @@ itself tested.
 ## Registered adapters
 
 - `reference-typescript` — the reference adapter in `adapters/reference/`.
+- `python` — `conformance/adapters/python/adapter.py`, over the public API of `cruma-tron-runner`; it needs the virtualenv at
+  `packages/python/.venv` described above.
 - `rust` — `packages/rust/conformance-adapter`, a binary over the public API of the `cruma-tron-runner` crate. The harness
   starts it with `cargo run`, and an adapter must write `ready` within seconds, so build it once first:
   `cargo build --manifest-path packages/rust/Cargo.toml -p cruma-tron-runner-conformance-adapter`.
