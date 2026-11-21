@@ -9,6 +9,11 @@
       "name": "python",
       "command": ["packages/python/.venv/bin/python", "conformance/adapters/python/adapter.py"],
       "cwd": "."
+    },
+    {
+      "name": "rust",
+      "command": ["cargo", "run", "--quiet", "--manifest-path", "packages/rust/Cargo.toml", "-p", "cruma-tron-runner-conformance-adapter"],
+      "cwd": "."
     }
   ]
 }

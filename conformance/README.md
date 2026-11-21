@@ -56,3 +56,10 @@ virtualenv first: `python3 -m venv packages/python/.venv && packages/python/.ven
 Register it in [`adapters.json`](adapters.json) (`name`, `command`, `cwd` relative to the repository root). The
 reference adapter in `adapters/reference/` implements all of this on Node's WebSocket and is what keeps the harness
 itself tested.
+
+## Registered adapters
+
+- `reference-typescript` — the reference adapter in `adapters/reference/`.
+- `rust` — `packages/rust/conformance-adapter`, a binary over the public API of the `cruma-tron-runner` crate. The harness
+  starts it with `cargo run`, and an adapter must write `ready` within seconds, so build it once first:
+  `cargo build --manifest-path packages/rust/Cargo.toml -p cruma-tron-runner-conformance-adapter`.
