@@ -16,10 +16,11 @@ import {
   Runner,
   SDK_VERSION,
   UnreachableError,
-  UnroutableDeliveryError,
+  UnknownHandlerError,
 } from "../src/index.ts";
 import {
   Convert,
+  type AcceptFrame,
   type AnnounceFrame,
   type ReportFrame,
   type RunnerFrameKind,
@@ -27,6 +28,7 @@ import {
 import { RUNNER_CHANNEL_ADDRESS } from "../src/generated/protocol-version.ts";
 
 const DELIVERY_ID = "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b01";
+const OTHER_DELIVERY_ID = "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b04";
 const SECRET = "delivery-secret";
 
 const frameDecoders = {
@@ -42,6 +44,7 @@ class FakeTron {
   readonly sockets: ServerSocket[] = [];
   readonly announcements: AnnounceFrame[] = [];
   readonly reports: ReportFrame[] = [];
+  readonly accepts: AcceptFrame[] = [];
   readonly tokens: string[] = [];
   acceptToken = true;
   reportAnswer: "recorded" | "wrong_secret" = "recorded";
@@ -65,16 +68,15 @@ class FakeTron {
     return `http://127.0.0.1:${(this.server.address() as AddressInfo).port}`;
   }
 
-  push(socket: ServerSocket): void {
+  push(socket: ServerSocket, handlerKey = "backup", deliveryId = DELIVERY_ID): void {
     socket.send(
       Convert.workFrameToJson({
         type: "work",
-        delivery_id: DELIVERY_ID,
-        handler_key: "backup",
+        delivery_id: deliveryId,
         run_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
         job_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
         job_name: "nightly",
-        handler_key: "backup",
+        handler_key: handlerKey,
         scheduled_for: "2026-01-02T03:04:05Z",
         accept_deadline: "2026-01-02T03:04:35Z",
       }),
@@ -103,6 +105,7 @@ class FakeTron {
         socket.send(Convert.announcedFrameToJson({ type: "announced" }));
         break;
       case "accept":
+        this.accepts.push(frame);
         socket.send(Convert.acceptedFrameToJson({ type: "accepted", delivery_id: frame.delivery_id, secret: SECRET }));
         break;
       case "report":
@@ -224,17 +227,42 @@ describe("Runner", () => {
     await sdk.stop();
   });
 
-  test("refuses to guess a handler when several are registered", async () => {
-    const sdk = runner().handle("a", () => ok("a")).handle("b", () => ok("b"));
+  test("routes each work frame to the handler registered for its key", async () => {
+    const sdk = runner(join(directory, "routing"))
+      .handle("a", () => ok("from a"))
+      .handle("b", () => ok("from b"));
+    const before = tron.announcements.length;
+    const reports = tron.reports.length;
+    const recorded: unknown[] = [];
+    sdk.on("reportRecorded", (event) => recorded.push(event));
+    await sdk.start();
+    const socket = await tron.connected(before + 1);
+    tron.push(socket, "b", DELIVERY_ID);
+    tron.push(socket, "a", OTHER_DELIVERY_ID);
+    while (recorded.length < 2) await new Promise((resolve) => setTimeout(resolve, 10));
+    await sdk.stop();
+    const outcomes = new Map(tron.reports.slice(reports).map((report) => [report.delivery_id, report.outcome.ok]));
+    assert.equal(outcomes.get(DELIVERY_ID), "from b");
+    assert.equal(outcomes.get(OTHER_DELIVERY_ID), "from a");
+  });
+
+  test("does not accept a delivery for an unregistered key and emits UnknownHandlerError", async () => {
+    const sdk = runner(join(directory, "unknown")).handle("a", () => ok("a"));
     const errors: unknown[] = [];
     sdk.on("error", (error) => errors.push(error));
     const before = tron.announcements.length;
     const reports = tron.reports.length;
+    const accepts = tron.accepts.length;
     await sdk.start();
-    tron.push(await tron.connected(before + 1));
+    tron.push(await tron.connected(before + 1), "missing");
     while (errors.length === 0) await new Promise((resolve) => setTimeout(resolve, 10));
     await sdk.stop();
-    assert.ok(errors[0] instanceof UnroutableDeliveryError);
+    const error = errors[0];
+    assert.ok(error instanceof UnknownHandlerError);
+    assert.equal(error.kind, "unknown_handler");
+    assert.equal(error.handlerKey, "missing");
+    assert.equal(error.deliveryId, DELIVERY_ID);
+    assert.equal(tron.accepts.length, accepts);
     assert.equal(tron.reports.length, reports);
   });
 

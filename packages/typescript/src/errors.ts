@@ -6,7 +6,7 @@ export type RunnerErrorKind =
   | "accept_refused"
   | "report_rejected"
   | "protocol_violation"
-  | "unroutable_delivery"
+  | "unknown_handler"
   | "secret_store_failed"
   | "invalid_frame"
   | "invalid_state";
@@ -86,17 +86,18 @@ export class ProtocolViolationError extends TronRunnerError {
 }
 
 /**
- * A delivery arrived that cannot be routed to a handler. Protocol v1's `work` frame does not name the
- * handler key it was dispatched for, so a runner with more than one handler cannot choose one; the SDK
- * fails loudly and does not accept the delivery rather than guess.
+ * A delivery arrived for a handler key this runner has not registered. The SDK does not accept it, so Tron
+ * treats it as undelivered; register a handler for the key before `start`.
  */
-export class UnroutableDeliveryError extends TronRunnerError {
-  readonly kind = "unroutable_delivery" satisfies RunnerErrorKind;
+export class UnknownHandlerError extends TronRunnerError {
+  readonly kind = "unknown_handler" satisfies RunnerErrorKind;
   readonly deliveryId: string;
-  constructor(deliveryId: string, handlerCount: number) {
-    super(`delivery ${deliveryId} cannot be routed: ${handlerCount} handlers are registered and the work frame names none`);
-    this.name = "UnroutableDeliveryError";
+  readonly handlerKey: string;
+  constructor(deliveryId: string, handlerKey: string) {
+    super(`delivery ${deliveryId} is for handler ${handlerKey}, which this runner has not registered`);
+    this.name = "UnknownHandlerError";
     this.deliveryId = deliveryId;
+    this.handlerKey = handlerKey;
   }
 }
 

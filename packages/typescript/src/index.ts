@@ -15,7 +15,7 @@ export {
   SecretStoreError,
   TronRunnerError,
   UnreachableError,
-  UnroutableDeliveryError,
+  UnknownHandlerError,
 } from "./errors.ts";
 export type { RunnerErrorKind, SecretStoreAction } from "./errors.ts";
 export type { AcceptRefusal, ConnectFailure, ProtocolViolation, ReportRejection } from "./generated/protocol.ts";

@@ -9,7 +9,7 @@ import {
   SecretStoreError,
   TronRunnerError,
   UnreachableError,
-  UnroutableDeliveryError,
+  UnknownHandlerError,
 } from "./errors.ts";
 import {
   Convert,
@@ -74,7 +74,7 @@ export interface RunnerEvents {
   /** Tron accepted the delivery and its secret is persisted; the handler is about to run. */
   deliveryAccepted: (delivery: Delivery) => void;
   reportRecorded: (receipt: ReportReceipt) => void;
-  /** Typed failures that happen after `start` resolved: refused accepts, rejected reports, unroutable deliveries and so on. */
+  /** Typed failures that happen after `start` resolved: refused accepts, rejected reports, deliveries for an unregistered handler and so on. */
   error: (error: TronRunnerError) => void;
 }
 
@@ -415,9 +415,9 @@ export class Runner {
 
   private onWork(connection: Connection, frame: WorkFrame): void {
     if (this.phase !== "running" || this.deliveries.has(frame.delivery_id)) return;
-    const [handler, ...others] = this.handlers.values();
-    if (!handler || others.length > 0) {
-      this.emitError(new UnroutableDeliveryError(frame.delivery_id, this.handlers.size));
+    const handler = this.handlers.get(frame.handler_key);
+    if (!handler) {
+      this.emitError(new UnknownHandlerError(frame.delivery_id, frame.handler_key));
       return;
     }
     this.deliveries.set(frame.delivery_id, {
