@@ -1,0 +1,45 @@
+name: release-nuget
+
+# Publishes Cruma.Tron.Runner to nuget.org through trusted publishing (GitHub OIDC): there is no stored API key.
+# nuget.org's policy is bound to this exact workflow file name and the `nuget-release` environment, so renaming
+# either breaks publishing. The org only allows GitHub-owned actions and NuGet/login, each pinned to a full
+# commit SHA; keep the trailing version comments in step with the SHAs.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Pack and push Cruma.Tron.Runner
+    runs-on: ubuntu-latest
+    environment: nuget-release
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 8.0.x
+      - name: The tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' packages/dotnet/src/Cruma.Tron.Runner.csproj)"
+          if [ "v$version" != "$TAG" ]; then
+            echo "tag $TAG does not match Cruma.Tron.Runner.csproj Version $version" >&2
+            exit 1
+          fi
+      - run: dotnet test packages/dotnet/tests -c Release
+      - run: dotnet pack packages/dotnet/src -c Release -o packages/dotnet/pack
+      - uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "packages/dotnet/pack/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate

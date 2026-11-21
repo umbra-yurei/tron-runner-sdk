@@ -11,6 +11,7 @@ one published protocol schema and held to one conformance suite.
 | `packages/<language>/` | Each SDK; its `generated/` message bindings and recorded protocol version are emitted, never hand-written |
 | `packages/typescript/` | `@cruma-io/tron-runner`: build with `npm run build:typescript`, test with `npm run test:typescript` |
 | `packages/dotnet/` | The `Cruma.Tron.Runner` NuGet package, its tests and its conformance adapter (`npm run build:dotnet-adapter`, `npm run test:dotnet`) |
+| `RELEASES.md`, `docs/RELEASING.md` | Released versions with the protocol version each supports, and how a release is cut |
 | `conformance/` | The shared [conformance suite](conformance/README.md) and a reference adapter |
 
 Needs Node >= 22.18 (it runs the TypeScript tooling directly).

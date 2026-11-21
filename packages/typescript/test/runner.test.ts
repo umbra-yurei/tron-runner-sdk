@@ -70,6 +70,7 @@ class FakeTron {
       Convert.workFrameToJson({
         type: "work",
         delivery_id: DELIVERY_ID,
+        handler_key: "backup",
         run_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
         job_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
         job_name: "nightly",
