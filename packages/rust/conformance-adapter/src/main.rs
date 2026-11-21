@@ -12,6 +12,7 @@ use cruma_tron_runner::{
     },
     Endpoint, Error, Event, FileSecretStore, Runner, SecretStore, SecretStoreError, SDK_VERSION, SUPPORTED_PROTOCOL,
 };
+use rustls_pki_types::{pem::PemObject, CertificateDer};
 use serde::Serialize;
 use std::{io::Write, process::ExitCode, sync::Arc, time::Duration};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -100,12 +101,26 @@ fn on_event(event: Event) {
     }
 }
 
+/// The roots in the PEM file `SSL_CERT_FILE` names, so a release run can trust the throwaway CA its Tron is served under.
+fn trusted_roots() -> Result<Vec<CertificateDer<'static>>, String> {
+    let Some(file) = std::env::var_os("SSL_CERT_FILE") else {
+        return Ok(Vec::new());
+    };
+    CertificateDer::pem_file_iter(&file)
+        .map_err(|error| format!("cannot read SSL_CERT_FILE {file:?}: {error}"))?
+        .collect::<Result<_, _>>()
+        .map_err(|error| format!("cannot parse SSL_CERT_FILE {file:?}: {error}"))
+}
+
 async fn start(command: StartCommand) -> Result<Runner, ()> {
     let endpoint = Endpoint::from_websocket_url(&command.tron_url).map_err(fail)?;
     let files = FileSecretStore::new(&command.secret_store.directory).map_err(fail)?;
     let mut builder = Runner::builder(endpoint, command.token)
         .concurrency_capacity(command.concurrency_capacity.max(1) as u32)
         .on_event(on_event);
+    for root in trusted_roots().map_err(fail)? {
+        builder = builder.trust_root(root);
+    }
     if let Some(name) = command.display_name {
         builder = builder.display_name(name);
     }

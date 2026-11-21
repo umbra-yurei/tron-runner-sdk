@@ -4,6 +4,8 @@
 //   TRON_URL=http://127.0.0.1:8090 npm run conformance   attach to a running AUTH_MODE=dev Tron
 //   npm run conformance -- --adapter reference-typescript --scenario drains
 //   npm run conformance -- --list
+//   --registry <file>                         drive the adapters in this registry instead of conformance/adapters.json
+//                                             (the release run points it at adapters built from packed artifacts)
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -23,7 +25,8 @@ function argument(name: string): string | undefined {
 }
 
 function loadAdapters(): AdapterSpec[] {
-  return Convert.toAdapterRegistry(readFileSync(resolve(repoRoot, "conformance/adapters.json"), "utf8")).adapters;
+  const registry = argument("registry") ?? resolve(repoRoot, "conformance/adapters.json");
+  return Convert.toAdapterRegistry(readFileSync(registry, "utf8")).adapters;
 }
 
 async function withTimeout(work: Promise<void>, label: string): Promise<void> {

@@ -1,6 +1,7 @@
 // A WebSocket pass-through between an SDK and Tron. It exists to provoke two things a
 // well-behaved SDK against a healthy Tron never sees: a dropped connection (reconnect)
 // and an `accept` that reaches Tron after the delivery timeout (accept_refused).
+import { createServer as createHttpsServer, type Server } from "node:https";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { Convert, type RunnerFrameKind, type ServerFrameKind } from "../packages/typescript/src/generated/protocol.ts";
 
@@ -9,6 +10,8 @@ export interface ProxyOptions {
   holdRunnerFrame?: (kind: RunnerFrameKind) => number;
   /** Milliseconds to hold a Tron-to-runner frame of this kind before forwarding it. */
   holdServerFrame?: (kind: ServerFrameKind) => number;
+  /** Serve wss:// with this key and certificate instead of ws://. */
+  tls?: { key: Buffer; certificate: Buffer };
 }
 
 export class RunnerProxy {
@@ -17,18 +20,23 @@ export class RunnerProxy {
   private readonly pairs = new Set<{ client: WebSocket; upstream: WebSocket }>();
   private connectionTotal = 0;
 
-  private constructor(server: WebSocketServer, url: string) {
+  private readonly secure: Server | undefined;
+
+  private constructor(server: WebSocketServer, secure: Server | undefined, url: string) {
     this.server = server;
+    this.secure = secure;
     this.url = url;
   }
 
   static async start(upstreamUrl: string, options: ProxyOptions = {}): Promise<RunnerProxy> {
-    const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
-    await new Promise<void>((resolve) => server.once("listening", () => resolve()));
-    const address = server.address();
+    const secure = options.tls ? createHttpsServer({ key: options.tls.key, cert: options.tls.certificate }) : undefined;
+    const server = secure ? new WebSocketServer({ server: secure }) : new WebSocketServer({ host: "127.0.0.1", port: 0 });
+    if (secure) await new Promise<void>((resolve) => secure.listen(0, "127.0.0.1", () => resolve()));
+    else await new Promise<void>((resolve) => server.once("listening", () => resolve()));
+    const address = (secure ?? server).address();
     if (typeof address === "string" || address === null) throw new Error("proxy did not bind a TCP port");
     const upstream = new URL(upstreamUrl);
-    const proxy = new RunnerProxy(server, `ws://127.0.0.1:${address.port}${upstream.pathname}`);
+    const proxy = new RunnerProxy(server, secure, `${secure ? "wss" : "ws"}://127.0.0.1:${address.port}${upstream.pathname}`);
     server.on("connection", (client) => proxy.pair(client, upstreamUrl, options));
     return proxy;
   }
@@ -48,6 +56,8 @@ export class RunnerProxy {
   async close(): Promise<void> {
     this.dropConnections();
     await new Promise<void>((resolve) => this.server.close(() => resolve()));
+    this.secure?.closeAllConnections();
+    if (this.secure) await new Promise<void>((resolve) => this.secure?.close(() => resolve()));
   }
 
   private pair(client: WebSocket, upstreamUrl: string, options: ProxyOptions): void {
