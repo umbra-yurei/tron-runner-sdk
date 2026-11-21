@@ -15,6 +15,7 @@ const RUN_TIMEOUT_MS = 30_000;
 // pushed at all, so the window must outlast a tick and the held accept must outlast the window.
 const DELIVERY_TIMEOUT_SHORT_SECONDS = 8;
 const ACCEPT_HELD_MS = 10_000;
+const UNREGISTERED_HANDLER_KEY = "handler-nobody-registered";
 const REFUSAL_WAIT_MS = 30_000;
 const NEVER_FINISHES_MS = 600_000;
 const DRAIN_HANDLER_MS = 300;
@@ -219,6 +220,22 @@ export const scenarios: Scenario[] = [
       const refused = await adapter.expect("accept_refused", () => true, REFUSAL_WAIT_MS);
       checkEqual(refused.reason, "delivery_timed_out", "the refusal");
       await adapter.expectNone("handler_invoked", 500);
+    },
+  },
+  {
+    name: "surfaces a delivery for a handler key it has no handler for as a typed unknown_handler",
+    async run(context) {
+      const user = context.newUser();
+      const token = await user.createWorkerKey("unknown-handler");
+      // Tron only pushes a key the runner announced, so the proxy renames the key in the work frame on its way to the runner.
+      const proxy = await context.proxy({ rewriteWork: (frame) => ({ ...frame, handler_key: UNREGISTERED_HANDLER_KEY }) });
+      const adapter = await context.connect({ token, tronUrl: proxy.url, handlers: [handler("registered-handler", "reply_ok", "x")] });
+      const jobId = await user.createRunnerJob({ name: "unknown-handler", handlerKey: "registered-handler" });
+      await user.triggerRun(jobId);
+      const unknown = await adapter.expect("unknown_handler");
+      checkEqual(unknown.handler_key, UNREGISTERED_HANDLER_KEY, "the key the SDK reports");
+      await adapter.expectNone("handler_invoked", 500);
+      await adapter.expectNone("delivery_accepted", 500);
     },
   },
   {

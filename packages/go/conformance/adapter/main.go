@@ -132,11 +132,14 @@ var hooks = tronrunner.Hooks{
 func emitTyped(err error) {
 	var refused *tronrunner.AcceptRefusedError
 	var rejected *tronrunner.ReportRejectedError
+	var unknown *tronrunner.UnknownHandlerError
 	switch {
 	case errors.As(err, &refused):
 		emit(&generated.AcceptRefusedEvent{DeliveryID: refused.DeliveryID, Reason: refused.Reason, Type: generated.TypeAcceptRefused})
 	case errors.As(err, &rejected):
 		emit(&generated.ReportRejectedEvent{DeliveryID: rejected.DeliveryID, Reason: rejected.Reason, Type: generated.TypeReportRejected})
+	case errors.As(err, &unknown):
+		emit(&generated.UnknownHandlerEvent{DeliveryID: unknown.DeliveryID, HandlerKey: unknown.HandlerKey, Type: generated.TypeUnknownHandler})
 	default:
 		emitError(err)
 	}

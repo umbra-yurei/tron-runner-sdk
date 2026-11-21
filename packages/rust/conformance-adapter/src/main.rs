@@ -8,7 +8,8 @@ use cruma_tron_runner::{
         ConnectFailedEvent, ConnectFailedEventType, ConnectFailure, ConnectedEvent, ConnectedEventType, DeliveryAcceptedEvent,
         DeliveryAcceptedEventType, HandlerInvokedEvent, HandlerInvokedEventType, HandlerOutcomeKind, ListPendingCommand, PendingEvent,
         PendingEventType, ReadyEvent, ReadyEventType, ReportPendingCommand, ReportRecordedEvent, ReportRecordedEventType,
-        ReportRejectedEvent, ReportRejectedEventType, SecretStoreKind, StartCommand, StoppedEvent, StoppedEventType,
+        ReportRejectedEvent, ReportRejectedEventType, SecretStoreKind, StartCommand, StoppedEvent, StoppedEventType, UnknownHandlerEvent,
+        UnknownHandlerEventType,
     },
     Endpoint, Error, Event, FileSecretStore, Runner, SecretStore, SecretStoreError, SDK_VERSION, SUPPORTED_PROTOCOL,
 };
@@ -96,6 +97,11 @@ fn on_event(event: Event) {
             delivery_id,
             reason,
             report_rejected_event_type: ReportRejectedEventType::ReportRejected,
+        }),
+        Event::Error(Error::UnknownHandler { delivery_id, handler_key }) => emit(&UnknownHandlerEvent {
+            delivery_id,
+            handler_key,
+            unknown_handler_event_type: UnknownHandlerEventType::UnknownHandler,
         }),
         Event::Error(error) => fail(error),
     }

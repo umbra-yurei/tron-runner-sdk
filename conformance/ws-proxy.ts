@@ -1,15 +1,18 @@
 // A WebSocket pass-through between an SDK and Tron. It exists to provoke two things a
-// well-behaved SDK against a healthy Tron never sees: a dropped connection (reconnect)
-// and an `accept` that reaches Tron after the delivery timeout (accept_refused).
+// well-behaved SDK against a healthy Tron never sees:
+// a dropped connection (reconnect), an `accept` that reaches Tron after the delivery timeout (accept_refused),
+// and a `work` frame for a handler key the runner never registered (unknown_handler).
 import { createServer as createHttpsServer, type Server } from "node:https";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
-import { Convert, type RunnerFrameKind, type ServerFrameKind } from "../packages/typescript/src/generated/protocol.ts";
+import { Convert, type RunnerFrameKind, type ServerFrameKind, type WorkFrame } from "../packages/typescript/src/generated/protocol.ts";
 
 export interface ProxyOptions {
   /** Milliseconds to hold a runner-to-Tron frame of this kind before forwarding it. */
   holdRunnerFrame?: (kind: RunnerFrameKind) => number;
   /** Milliseconds to hold a Tron-to-runner frame of this kind before forwarding it. */
   holdServerFrame?: (kind: ServerFrameKind) => number;
+  /** Replaces every `work` frame on its way to the runner, e.g. to name a handler key the runner has no handler for. */
+  rewriteWork?: (frame: WorkFrame) => WorkFrame;
   /** Serve wss:// with this key and certificate instead of ws://. */
   tls?: { key: Buffer; certificate: Buffer };
 }
@@ -82,9 +85,11 @@ export class RunnerProxy {
       for (const frame of queued.splice(0)) forward(frame.data, frame.binary);
     });
     upstream.on("message", (data, binary) => {
-      const delay = binary ? 0 : (options.holdServerFrame?.(Convert.toServerFrameTag(data.toString()).type) ?? 0);
+      const kind = binary ? undefined : Convert.toServerFrameTag(data.toString()).type;
+      const delay = kind === undefined ? 0 : (options.holdServerFrame?.(kind) ?? 0);
+      const outgoing = kind === "work" && options.rewriteWork ? Convert.workFrameToJson(options.rewriteWork(Convert.toWorkFrame(data.toString()))) : data;
       const send = () => {
-        if (client.readyState === WebSocket.OPEN) client.send(data, { binary });
+        if (client.readyState === WebSocket.OPEN) client.send(outgoing, { binary });
       };
       if (delay > 0) setTimeout(send, delay);
       else send();
