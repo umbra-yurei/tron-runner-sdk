@@ -1,0 +1,7 @@
+export function typeOf(frame: Record<string, unknown>): unknown {
+  return frame.type;
+}
+export const rows: unknown[] = [];
+export interface Loose {
+  [key: string]: any;
+}

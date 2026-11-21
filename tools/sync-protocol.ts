@@ -8,6 +8,8 @@
 // --url reads what a running Tron serves (GET /api/asyncapi.json, GET /openapi.json).
 // --tron-dir asks the checkout for the same two documents with its own commands
 // (`dump_asyncapi_spec`, `contracts/tron.openapi.json`).
+//
+// adr2-opaque-file: the documents are only compared and rewritten whole, never read field by field, so they are opaque passthrough
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
