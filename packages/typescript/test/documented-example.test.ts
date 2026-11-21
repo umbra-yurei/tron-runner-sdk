@@ -49,6 +49,7 @@ class SimpleFakeTron {
         delivery_id: DELIVERY_ID,
         run_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
         job_id: "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
+        handler_key: "send-report",
         job_name: "nightly",
         scheduled_for: "2026-01-02T03:04:05Z",
         accept_deadline: "2026-01-02T03:04:35Z",
@@ -68,7 +69,7 @@ class SimpleFakeTron {
         socket.send(Convert.authenticatedFrameToJson({ type: "authenticated", session_id: DELIVERY_ID, worker_api_key_id: DELIVERY_ID }));
         break;
       case "announce":
-        const announce = Convert.toAnnounceFrame(text) as AnnounceFrame;
+        const announce = Convert.toAnnounceFrame(text);
         this.announcements.push(announce);
         socket.send(Convert.announcedFrameToJson({ type: "announced" }));
         break;
@@ -76,7 +77,7 @@ class SimpleFakeTron {
         socket.send(Convert.acceptedFrameToJson({ type: "accepted", delivery_id: DELIVERY_ID, secret: SECRET }));
         break;
       case "report":
-        const report = Convert.toReportFrame(text) as ReportFrame;
+        const report = Convert.toReportFrame(text);
         this.reports.push(report);
         socket.send(Convert.reportRecordedFrameToJson({ type: "report_recorded", delivery_id: DELIVERY_ID, late: false }));
         break;

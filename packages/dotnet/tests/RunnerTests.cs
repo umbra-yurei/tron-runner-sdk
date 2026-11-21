@@ -182,7 +182,10 @@ public sealed class DocumentedExampleTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         listener = new HttpListener();
-        var port = new Random().Next(10000, 20000);
+        var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
         listener.Prefixes.Add($"http://127.0.0.1:{port}/");
         listener.Start();
 
@@ -318,6 +321,7 @@ public sealed class DocumentedExampleTests : IAsyncLifetime
                     Type = WorkFrameType.Work,
                     DeliveryId = deliveryId,
                     JobId = Guid.Parse("00000000-0000-0000-0000-000000000789"),
+                    HandlerKey = "send-report",
                     JobName = "nightly",
                     RunId = Guid.Parse("00000000-0000-0000-0000-000000000456"),
                     ScheduledFor = DateTime.UtcNow.ToString("O"),

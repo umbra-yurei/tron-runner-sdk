@@ -136,6 +136,7 @@ func serveOneDelivery(ctx context.Context, ws *websocket.Conn, deliveryID, secre
 	if err := send(&generated.WorkFrame{
 		AcceptDeadline: now.Add(10 * time.Second).Format(time.RFC3339),
 		DeliveryID:     deliveryID,
+		HandlerKey:     "send-report",
 		JobID:          "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b03",
 		JobName:        "nightly",
 		RunID:          "5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b02",
