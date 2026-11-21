@@ -7,3 +7,4 @@ __pycache__/
 /packages/dotnet/**/obj/
 /packages/dotnet/adapter/out/
 /packages/dotnet/pack/
+/packages/rust/target

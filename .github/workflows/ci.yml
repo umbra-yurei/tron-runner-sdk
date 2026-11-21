@@ -55,3 +55,23 @@ jobs:
       - run: dotnet test packages/dotnet/tests -c Release
       - run: dotnet pack packages/dotnet/src -c Release -o packages/dotnet/pack
       - run: dotnet build packages/dotnet/adapter -c Release -o packages/dotnet/adapter/out
+
+  rust-sdk:
+    name: Rust SDK builds, lints and is publishable
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/rust
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      # Packages the crate as crates.io would and builds the packaged copy; does not upload.
+      - run: cargo publish --dry-run --locked

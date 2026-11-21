@@ -9,6 +9,11 @@
       "name": "dotnet",
       "command": ["dotnet", "packages/dotnet/adapter/out/Cruma.Tron.Runner.ConformanceAdapter.dll"],
       "cwd": "."
+    },
+    {
+      "name": "rust",
+      "command": ["cargo", "run", "--quiet", "--manifest-path", "packages/rust/Cargo.toml", "-p", "cruma-tron-runner-conformance-adapter"],
+      "cwd": "."
     }
   ]
 }
