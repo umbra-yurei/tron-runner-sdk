@@ -30,7 +30,7 @@ from .errors import (
     SecretStoreError,
     TronRunnerError,
     UnreachableError,
-    UnroutableDeliveryError,
+    UnknownHandlerError,
 )
 from .generated.protocol import (
     AcceptedFrame,
@@ -315,10 +315,10 @@ class Runner:
     def _on_work(self, session: _Session, frame: WorkFrame) -> None:
         if self._stopping:
             return
-        if len(self._handlers) != 1:
-            self._emit_error(UnroutableDeliveryError(frame.delivery_id, len(self._handlers)))
+        handler = self._handlers.get(frame.handler_key)
+        if handler is None:
+            self._emit_error(UnknownHandlerError(frame.delivery_id, frame.handler_key))
             return
-        handler = next(iter(self._handlers.values()))
         delivery = Delivery(
             delivery_id=frame.delivery_id,
             run_id=frame.run_id,

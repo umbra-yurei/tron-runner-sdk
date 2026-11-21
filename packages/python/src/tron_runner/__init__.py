@@ -27,7 +27,7 @@ from .errors import (
     SecretStoreError,
     TronRunnerError,
     UnreachableError,
-    UnroutableDeliveryError,
+    UnknownHandlerError,
 )
 from .generated.protocol_version import PROTOCOL_DOCUMENT_VERSION, PROTOCOL_VERSION, RUNNER_CHANNEL_ADDRESS
 from .outcomes import Delivery, Err, Handler, Ok, Outcome, RecordedReport
@@ -60,7 +60,7 @@ __all__ = [
     "SecretStoreError",
     "TronRunnerError",
     "UnreachableError",
-    "UnroutableDeliveryError",
+    "UnknownHandlerError",
     "__version__",
     "runner_url",
 ]
