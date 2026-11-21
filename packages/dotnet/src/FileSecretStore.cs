@@ -2,13 +2,17 @@ using System.Globalization;
 
 namespace Cruma.Tron.Runner;
 
-/// <summary>One file per delivery in a caller-chosen directory, readable only by the current user (0600 on Unix).</summary>
+/// <summary>One file per delivery in a caller-chosen directory, readable only by the current user (files 0600, a new directory 0700 on Unix). An existing directory that group or others can access is refused with <see cref="InsecureSecretDirectoryException"/> rather than silently changed.</summary>
 public sealed class FileSecretStore : ISecretStore
 {
     private const string Extension = ".secret";
     private const string TemporaryExtension = ".tmp";
     private const UnixFileMode PrivateFile = UnixFileMode.UserRead | UnixFileMode.UserWrite;
     private const UnixFileMode PrivateDirectory = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+
+    private const UnixFileMode OthersAccess =
+        UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
+        UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute;
 
     private readonly string directory;
 
@@ -22,6 +26,11 @@ public sealed class FileSecretStore : ISecretStore
         else
         {
             Directory.CreateDirectory(this.directory, PrivateDirectory);
+            var mode = File.GetUnixFileMode(this.directory);
+            if ((mode & OthersAccess) != 0)
+            {
+                throw new InsecureSecretDirectoryException(this.directory, mode);
+            }
         }
     }
 

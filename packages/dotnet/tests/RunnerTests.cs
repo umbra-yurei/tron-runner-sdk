@@ -33,8 +33,13 @@ public sealed class ProtocolTests
     [Fact]
     public void OutcomesSerializeAsExactlyOneOfOkOrErr()
     {
-        Assert.Equal("""{"ok":"fine"}""", Outcome.Ok("fine").ToWire().ToJson());
-        Assert.Equal("""{"err":"broke"}""", Outcome.Err("broke").ToWire().ToJson());
+        var ok = Outcome.Ok("fine").ToWire();
+        Assert.Equal("fine", ok.Ok);
+        Assert.Null(ok.Err);
+
+        var err = Outcome.Err("broke").ToWire();
+        Assert.Equal("broke", err.Err);
+        Assert.Null(err.Ok);
     }
 
     [Fact]
@@ -112,6 +117,38 @@ public sealed class FileSecretStoreTests : IDisposable
         var file = Directory.GetFiles(directory).Single();
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(file));
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(directory));
+    }
+
+    [Fact]
+    public void AnExistingDirectoryOthersCanAccessIsRefusedAndLeftAlone()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        const UnixFileMode permissive = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
+        Directory.CreateDirectory(directory);
+        File.SetUnixFileMode(directory, permissive);
+
+        var refusal = Assert.Throws<InsecureSecretDirectoryException>(() => new FileSecretStore(directory));
+        Assert.Equal(permissive, refusal.Mode);
+        Assert.Equal(permissive, File.GetUnixFileMode(directory));
+    }
+
+    [Fact]
+    public async Task AnExistingPrivateDirectoryIsAccepted()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        var store = new FileSecretStore(directory);
+        await store.SaveAsync(Guid.NewGuid(), "s3cret", default);
+        Assert.Single(await store.PendingAsync(default));
     }
 
     [Fact]

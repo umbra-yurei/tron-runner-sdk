@@ -79,3 +79,20 @@ public sealed class HandlerRoutingException : TronRunnerException
 
     public Guid DeliveryId { get; }
 }
+
+/// <summary>The secret directory already exists and group or others can access it, so secrets stored there would not be private.</summary>
+public sealed class InsecureSecretDirectoryException : TronRunnerException
+{
+    public InsecureSecretDirectoryException(string directory, UnixFileMode mode)
+        : base($"secret directory {directory} has mode {Convert.ToString((int)mode, 8)}; group and others must have no access (use chmod 700 or choose another directory)")
+    {
+        Directory = directory;
+        Mode = mode;
+    }
+
+    /// <summary>The refused directory.</summary>
+    public string Directory { get; }
+
+    /// <summary>Its permissions.</summary>
+    public UnixFileMode Mode { get; }
+}

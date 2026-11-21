@@ -30,7 +30,9 @@ await runner.StopAsync();      // takes no new work, waits for in-flight handler
 - Reconnects after a lost connection with a capped backoff and announces again.
 - Accepts each delivery immediately, then runs your handler; a handler that throws is reported as `Err`.
 - Keeps each delivery's secret in an `ISecretStore` (a file per delivery, mode 0600, by default) until Tron records
-  the report, so a restarted process can still report with `ReportPendingAsync`.
+  the report, so a restarted process can still report with `ReportPendingAsync`. A secret directory that does not
+  exist is created 0700; an existing one that group or others can access is refused with
+  `InsecureSecretDirectoryException` (the SDK never changes permissions on a directory it did not create).
 - Typed refusals: `AcceptRefusedException`, `ReportRejectedException`, `ConnectFailedException`,
   `ProtocolViolationException`.
 
