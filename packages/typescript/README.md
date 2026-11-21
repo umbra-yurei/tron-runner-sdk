@@ -50,9 +50,9 @@ await runner.stop(); // finish in-flight work, report it, then close
 - **Drains** on `stop()`: no new work is taken, running handlers finish, Tron answers their reports, then the
   connection closes.
 
-A runner that registers more than one handler cannot receive deliveries yet: protocol `v1`'s `work` frame does not name
-the handler key it was dispatched for, so the SDK emits an `UnroutableDeliveryError` and does not accept the delivery
-rather than guess. Register one handler per runner process until Tron adds the key to `work`.
+A runner can register any number of handlers. Each `work` frame names the handler key it was dispatched for, and the
+SDK runs the handler registered under that key. A delivery for a key with no registered handler is not accepted and
+surfaces an `UnknownHandlerError` (with `deliveryId` and `handlerKey`) through the `error` event. Multi-handler routing needs a Tron whose `work` frame carries `handler_key`.
 
 The wire messages are generated from Tron's published AsyncAPI document, so the package cannot drift from the protocol
 by hand-editing; see the [repository](https://github.com/umbra-yurei/tron-runner-sdk) for the thin-SDK contract and the
