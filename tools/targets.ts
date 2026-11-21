@@ -67,19 +67,22 @@ export const targets: Target[] = [
   {
     language: "dotnet",
     quicktypeLanguage: "csharp",
-    rendererOptions: { namespace: "Tron.RunnerSdk.Generated", framework: "SystemTextJson", "array-type": "list" },
+    rendererOptions: { namespace: "Cruma.Tron.Runner.Generated", framework: "SystemTextJson", "array-type": "list" },
     directory: "packages/dotnet/src/Generated",
     bindingsFile: "Protocol.cs",
     versionFile: "ProtocolVersion.cs",
     comment: "//",
-    // Same wire rule as Rust: an absent optional is omitted, never written as null.
+    // Same wire rule as Rust: an absent optional is omitted, never written as null. The bindings carry no
+    // nullable annotations, so they opt out of the nullable context the hand-written package code is compiled in.
     postProcess: (source) =>
-      source.replace(
-        "new(JsonSerializerDefaults.General)\n        {\n",
-        "new(JsonSerializerDefaults.General)\n        {\n            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,\n",
-      ),
+      source
+        .replace(
+          "new(JsonSerializerDefaults.General)\n        {\n",
+          "new(JsonSerializerDefaults.General)\n        {\n            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,\n",
+        )
+        .replace("namespace Cruma.Tron.Runner.Generated\n{", "#nullable disable\n#pragma warning disable CS8632 // the converters use `?` annotations the disabled context does not recognise\n\nnamespace Cruma.Tron.Runner.Generated\n{"),
     versionSource: ({ protocol, document, channel }) =>
-      `namespace Tron.RunnerSdk.Generated\n{\n    public static class ProtocolVersion\n    {\n        /// <summary>The runner protocol version this package speaks.</summary>\n        public const string Current = ${JSON.stringify(protocol)};\n\n        /// <summary>The version of the AsyncAPI document the bindings were generated from.</summary>\n        public const string DocumentVersion = ${JSON.stringify(document)};\n\n        /// <summary>The path of the runner WebSocket, relative to Tron's base URL.</summary>\n        public const string ChannelAddress = ${JSON.stringify(channel)};\n    }\n}\n`,
+      `namespace Cruma.Tron.Runner.Generated\n{\n    public static class ProtocolVersion\n    {\n        /// <summary>The runner protocol version this package speaks.</summary>\n        public const string Current = ${JSON.stringify(protocol)};\n\n        /// <summary>The version of the AsyncAPI document the bindings were generated from.</summary>\n        public const string DocumentVersion = ${JSON.stringify(document)};\n\n        /// <summary>The path of the runner WebSocket, relative to Tron's base URL.</summary>\n        public const string ChannelAddress = ${JSON.stringify(channel)};\n    }\n}\n`,
   },
   {
     language: "go",

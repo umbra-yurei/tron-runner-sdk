@@ -6,4 +6,8 @@ __pycache__/
 /packages/python/.venv
 /packages/python/dist
 *.egg-info
+/packages/dotnet/**/bin/
+/packages/dotnet/**/obj/
+/packages/dotnet/adapter/out/
+/packages/dotnet/pack/
 /packages/rust/target

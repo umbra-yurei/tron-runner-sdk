@@ -1,5 +1,5 @@
 // Decodes each sample with the generated C# bindings and writes it back out re-encoded.
-using Tron.RunnerSdk.Generated;
+using Cruma.Tron.Runner.Generated;
 
 var inputDir = args[0];
 var outputDir = args[1];

@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run check:generated && npm run typecheck",
     "conformance": "node conformance/run.ts",
-    "check:bindings": "node tools/check-bindings.ts"
+    "check:bindings": "node tools/check-bindings.ts",
+    "build:dotnet-adapter": "dotnet build packages/dotnet/adapter -c Release -o packages/dotnet/adapter/out",
+    "test:dotnet": "dotnet test packages/dotnet/tests -c Release"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

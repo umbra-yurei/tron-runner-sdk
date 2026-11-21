@@ -9,6 +9,7 @@ one published protocol schema and held to one conformance suite.
 | `contract/` | The language-neutral [thin-SDK contract](contract/sdk-contract.md) and the authored adapter protocol schema |
 | `tools/` | Reproducible generation (`generate.ts`) and drift checks (`sync-protocol.ts`) |
 | `packages/<language>/` | Each SDK; its `generated/` message bindings and recorded protocol version are emitted, never hand-written |
+| `packages/dotnet/` | The `Cruma.Tron.Runner` NuGet package, its tests and its conformance adapter (`npm run build:dotnet-adapter`, `npm run test:dotnet`) |
 | `conformance/` | The shared [conformance suite](conformance/README.md) and a reference adapter |
 
 Needs Node >= 22.18 (it runs the TypeScript tooling directly).
