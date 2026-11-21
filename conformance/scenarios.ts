@@ -83,6 +83,28 @@ export const scenarios: Scenario[] = [
     },
   },
   {
+    name: "routes each delivery to the handler registered for its handler key",
+    async run(context) {
+      const user = context.newUser();
+      const adapter = await context.connect({
+        token: await user.createWorkerKey("routing"),
+        handlers: [handler("route-a", "reply_ok", "answer from a"), handler("route-b", "reply_ok", "answer from b")],
+      });
+      const jobA = await user.createRunnerJob({ name: "route a", handlerKey: "route-a" });
+      const jobB = await user.createRunnerJob({ name: "route b", handlerKey: "route-b" });
+      const runA = await user.triggerRun(jobA);
+      const runB = await user.triggerRun(jobB);
+      const invokedA = await adapter.expect("handler_invoked", (event) => event.run_id === runA.id);
+      const invokedB = await adapter.expect("handler_invoked", (event) => event.run_id === runB.id);
+      checkEqual(invokedA.handler_key, "route-a", "the handler invoked for the first job");
+      checkEqual(invokedB.handler_key, "route-b", "the handler invoked for the second job");
+      const finishedA = await user.waitForRun(jobA, runA.id, ["succeeded"], RUN_TIMEOUT_MS);
+      const finishedB = await user.waitForRun(jobB, runB.id, ["succeeded"], RUN_TIMEOUT_MS);
+      checkEqual(finishedA.deliveries[0]?.outcome_message, "answer from a", "the first run's recorded message");
+      checkEqual(finishedB.deliveries[0]?.outcome_message, "answer from b", "the second run's recorded message");
+    },
+  },
+  {
     name: "accepts a delivery and reports Ok",
     async run(context) {
       const user = context.newUser();

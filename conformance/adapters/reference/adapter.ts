@@ -167,11 +167,17 @@ class Runner {
           fail(new Error(`protocol_error: ${frame.reason}`));
         }
         break;
-      case "work":
+      case "work": {
+        const handler = this.config.handlers.find((script) => script.handler_key === frame.handler_key);
+        if (!handler) {
+          fail(new Error(`unknown_handler: no handler registered for key ${JSON.stringify(frame.handler_key)} (delivery ${frame.delivery_id})`));
+          break;
+        }
         this.unanswered.add(frame.delivery_id);
         this.send(Convert.acceptFrameToJson({ type: "accept", delivery_id: frame.delivery_id }));
-        this.pendingWork.set(frame.delivery_id, { runId: frame.run_id, jobId: frame.job_id, jobName: frame.job_name });
+        this.pendingWork.set(frame.delivery_id, { runId: frame.run_id, jobId: frame.job_id, jobName: frame.job_name, handler });
         break;
+      }
       case "accepted":
         this.onAccepted(frame);
         break;
@@ -193,7 +199,7 @@ class Runner {
   }
 
   private sessionId = "";
-  private readonly pendingWork = new Map<string, { runId: string; jobId: string; jobName: string }>();
+  private readonly pendingWork = new Map<string, { runId: string; jobId: string; jobName: string; handler: HandlerScript }>();
 
   private announce(): void {
     this.send(
@@ -217,7 +223,7 @@ class Runner {
     if (!work) throw new Error(`accepted a delivery that was never pushed: ${frame.delivery_id}`);
     this.store.save(frame.delivery_id, frame.secret);
     emit({ type: "delivery_accepted", delivery_id: frame.delivery_id });
-    const handler = this.soleHandler();
+    const handler = work.handler;
     emit({
       type: "handler_invoked",
       handler_key: handler.handler_key,
@@ -234,13 +240,6 @@ class Runner {
         this.answered(frame.delivery_id);
       }
     }, handler.delay_ms);
-  }
-
-  // Tron's v1 `work` frame does not name the handler it was dispatched for, so a
-  // runner announcing several handlers cannot route. Adapters therefore announce one.
-  private soleHandler(): HandlerScript {
-    if (this.config.handlers.length !== 1) throw new Error("work cannot be routed: v1 `work` frames carry no handler key");
-    return this.config.handlers[0] as HandlerScript;
   }
 
   report(deliveryId: string, outcome: RunOutcome): void {

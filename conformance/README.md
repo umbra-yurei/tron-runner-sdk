@@ -24,7 +24,7 @@ the first start compiles Tron. Tron's server log goes to `conformance/.run/tron.
 ## Cases
 
 authentication and announce; typed failure for a bad token and an unreachable Tron; reconnect after a dropped
-connection; handler-filtered delivery; accept + `Ok`; accept + `Err`; restart between accept and report;
+connection; handler-filtered delivery; two handlers on one runner each receiving the delivery for their own `handler_key`; accept + `Ok`; accept + `Err`; restart between accept and report;
 `wrong_secret`, `not_in_flight` and `delivery_timed_out` rejections; graceful drain (in-flight work finishes and its report acknowledgement arrives, with the proxy holding the acknowledgement, before `stopped`). Capacity cases are added after
 Tron's capacity-aware dispatch (board task `e58057dd`) lands.
 
