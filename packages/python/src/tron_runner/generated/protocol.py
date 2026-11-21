@@ -255,6 +255,7 @@ class AdapterEventKind(Enum):
     REPORT_RECORDED = "report_recorded"
     REPORT_REJECTED = "report_rejected"
     STOPPED = "stopped"
+    UNKNOWN_HANDLER = "unknown_handler"
 
 
 @dataclass
@@ -1211,6 +1212,35 @@ class StoppedEvent:
         return result
 
 
+class UnknownHandlerEventType(Enum):
+    UNKNOWN_HANDLER = "unknown_handler"
+
+
+@dataclass
+class UnknownHandlerEvent:
+    """The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it
+    has no handler for. It did not run a handler.
+    """
+    delivery_id: UUID
+    handler_key: str
+    type: UnknownHandlerEventType
+
+    @staticmethod
+    def from_dict(obj: Any) -> 'UnknownHandlerEvent':
+        assert isinstance(obj, dict)
+        delivery_id = UUID(obj.get("delivery_id"))
+        handler_key = from_str(obj.get("handler_key"))
+        type = UnknownHandlerEventType(obj.get("type"))
+        return UnknownHandlerEvent(delivery_id, handler_key, type)
+
+    def to_dict(self) -> dict:
+        result: dict = {}
+        result["delivery_id"] = str(self.delivery_id)
+        result["handler_key"] = from_str(self.handler_key)
+        result["type"] = to_enum(UnknownHandlerEventType, self.type)
+        return result
+
+
 class WorkFrameType(Enum):
     WORK = "work"
 
@@ -1659,6 +1689,14 @@ def stopped_event_from_dict(s: Any) -> StoppedEvent:
 
 def stopped_event_to_dict(x: StoppedEvent) -> Any:
     return to_class(StoppedEvent, x)
+
+
+def unknown_handler_event_from_dict(s: Any) -> UnknownHandlerEvent:
+    return UnknownHandlerEvent.from_dict(s)
+
+
+def unknown_handler_event_to_dict(x: UnknownHandlerEvent) -> Any:
+    return to_class(UnknownHandlerEvent, x)
 
 
 def work_frame_from_dict(s: Any) -> WorkFrame:

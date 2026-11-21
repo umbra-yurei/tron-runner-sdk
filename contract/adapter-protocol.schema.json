@@ -340,6 +340,31 @@
       },
       "additionalProperties": false
     },
+    "UnknownHandlerEvent": {
+      "type": "object",
+      "description": "The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it has no handler for. It did not run a handler.",
+      "required": [
+        "type",
+        "delivery_id",
+        "handler_key"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "unknown_handler"
+          ]
+        },
+        "delivery_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "handler_key": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "ReportRecordedEvent": {
       "type": "object",
       "description": "Tron recorded a report.",
@@ -460,6 +485,7 @@
         "handler_invoked",
         "delivery_accepted",
         "accept_refused",
+        "unknown_handler",
         "report_recorded",
         "report_rejected",
         "pending",

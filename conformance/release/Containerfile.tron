@@ -1,0 +1,24 @@
+# Tron's backend, built from a pinned source tree for the release conformance run. Only the backend is built: the
+# run drives the REST API and the runner WebSocket, never the SPA. The build context is assembled by
+# tron-stack.ts as tron/, umbra-auth/ and cruma-web-api/ side by side, which is the layout Tron's path
+# dependencies expect.
+FROM docker.io/library/rust:1.95-bookworm AS build
+ENV RUSTUP_TOOLCHAIN=1.95.0
+WORKDIR /src/tron
+COPY umbra-auth /src/umbra-auth
+COPY cruma-web-api /src/cruma-web-api
+COPY tron /src/tron
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/src/tron/target,sharing=locked \
+    cargo build --locked -p tron-backend \
+    && install -D target/debug/tron-backend /out/tron
+
+FROM docker.io/library/debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=build /out/tron /app/tron
+ENV PORT=8090 AUTH_MODE=dev
+EXPOSE 8090
+CMD ["/app/tron"]

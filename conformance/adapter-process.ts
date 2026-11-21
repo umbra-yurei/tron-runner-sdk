@@ -1,6 +1,7 @@
 // One running SDK adapter: a spawned process that takes AdapterCommand lines on stdin
 // and writes AdapterEvent lines on stdout (contract/adapter-protocol.schema.json).
 import { spawn, type ChildProcess } from "node:child_process";
+import { resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AdapterRegistration } from "../packages/typescript/src/generated/protocol.ts";
 import { decodeEvent, encodeLine, type AdapterCommand, type AdapterEvent } from "./adapter-codec.ts";
@@ -25,7 +26,7 @@ export class AdapterProcess {
   constructor(spec: AdapterSpec, repoRoot: string) {
     const [program, ...args] = spec.command;
     if (!program) throw new Error(`adapter ${spec.name} has an empty command`);
-    this.child = spawn(program, args, { cwd: `${repoRoot}/${spec.cwd}`, stdio: ["pipe", "pipe", "pipe"] });
+    this.child = spawn(program, args, { cwd: resolve(repoRoot, spec.cwd), stdio: ["pipe", "pipe", "pipe"] });
     this.child.stderr?.on("data", (chunk: Buffer) => this.stderr.push(chunk.toString()));
     createInterface({ input: this.child.stdout as NodeJS.ReadableStream }).on("line", (line) => {
       if (line.trim() === "") return;

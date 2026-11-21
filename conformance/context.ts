@@ -58,7 +58,7 @@ export class ScenarioContext {
   }
 
   async proxy(options: ProxyOptions = {}): Promise<RunnerProxy> {
-    const proxy = await RunnerProxy.start(this.runnerUrl, options);
+    const proxy = await RunnerProxy.start(this.runnerUrl, { tls: this.stack.proxyTls && { key: this.stack.proxyTls.key, certificate: this.stack.proxyTls.certificate }, ...options });
     this.proxies.push(proxy);
     return proxy;
   }

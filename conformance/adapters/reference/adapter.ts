@@ -170,7 +170,7 @@ class Runner {
       case "work": {
         const handler = this.config.handlers.find((script) => script.handler_key === frame.handler_key);
         if (!handler) {
-          fail(new Error(`unknown_handler: no handler registered for key ${JSON.stringify(frame.handler_key)} (delivery ${frame.delivery_id})`));
+          emit({ type: "unknown_handler", delivery_id: frame.delivery_id, handler_key: frame.handler_key });
           break;
         }
         this.unanswered.add(frame.delivery_id);

@@ -21,6 +21,34 @@ Environment: `TRON_URL` (attach), else `TRON_DIR` (default `../tron`), `TRON_POR
 (default Tron's local Postgres). Starting Tron needs a container engine for its Postgres and Tron's Rust toolchain;
 the first start compiles Tron. Tron's server log goes to `conformance/.run/tron.log`.
 
+## Release gate
+
+`npm run conformance:release` is the run that decides whether a release may be tagged ([`docs/RELEASING.md`](../docs/RELEASING.md)).
+It differs from `npm run conformance` in three ways that each close a hole a source-tree, plain-`ws://` run leaves open:
+
+- **Packed artifacts.** It exports the release commit with `git archive`, packs each SDK as it is published (`cargo package`,
+  `npm pack`, a wheel, `dotnet pack`, a Go module zip served from a `file://` module proxy) and builds each SDK's adapter
+  against that artifact: the Rust adapter depends on the unpacked `.crate`, the TypeScript adapter's SDK import is redirected
+  to the package installed from the `.tgz` (`artifact-redirect.ts`), Python runs in a venv with only the wheel, .NET restores the
+  `.nupkg` from a local feed, and Go requires the module by version from the zip. Each stager then checks the SDK really
+  resolved from the artifact, and the run prints every artifact's sha256.
+- **TLS.** Tron listens on plain HTTP inside its container, as in deployment, behind a TLS terminator (`tls.ts`) with a
+  certificate from a throwaway CA (`mkcerts.go`) that is created for the run and deleted with it. Every SDK is told to trust that
+  CA through its normal hook: `SSL_CERT_FILE` for Python, Go, .NET and the Rust adapter (which passes it to the SDK's public
+  `RunnerBuilder::trust_root`), `NODE_EXTRA_CA_CERTS` for Node. The harness's own WebSocket proxies (reconnect, held frames) serve the
+  same certificate, so those cases cross TLS too.
+- **A pinned Tron, built and run in containers.** `pin.ts` names the commits of Tron and the two repositories its Cargo path
+  dependencies live in (`umbra-auth`, `cruma-web-api`), and the Postgres image. They are exported with `git archive` and built by
+  `Containerfile.tron` (backend only), then started with `AUTH_MODE=dev` next to Postgres on a private podman network. The pin is
+  the Tron running in production; move it when production moves, in a commit that says so. The host needs `git`, `podman`, Node 22,
+  and the toolchains of the SDKs (`cargo`, `python3` with `venv`, `npm`, `dotnet`, `go`); the sibling checkouts default to `../tron`,
+  `../umbra-auth`, `../cruma-web-api` (`TRON_DIR`, `UMBRA_AUTH_DIR`, `CRUMA_WEB_API_DIR`). The first run builds Tron's image (a few
+  minutes); later runs reuse it.
+
+`--ref <commit|tag>` proves another commit (without it the committed `HEAD` is used and a dirty tree is refused, because the run
+proves what will be tagged); `--only rust,go` and `--scenario <substring>` narrow the run for iteration only; `--keep` keeps the
+work directory, which is kept on failure anyway, in `conformance/.run/release/<run>/` with one log per step.
+
 ## Cases
 
 authentication and announce; typed failure for a bad token and an unreachable Tron; reconnect after a dropped

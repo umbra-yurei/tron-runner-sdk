@@ -115,7 +115,13 @@ async Task<RunnerClient> StartAsync(StartCommand command)
         Emit(new ReportRecordedEvent { Type = ReportRecordedEventType.ReportRecorded, DeliveryId = receipt.DeliveryId, Late = receipt.Late }.ToJson());
     runner.ReportRejected += rejection =>
         Emit(new ReportRejectedEvent { Type = ReportRejectedEventType.ReportRejected, DeliveryId = rejection.DeliveryId, Reason = rejection.Reason }.ToJson());
-    runner.Faulted += fault => Fail(fault.ToString());
+    runner.Faulted += fault =>
+    {
+        if (fault is UnknownHandlerException unknown)
+            Emit(new UnknownHandlerEvent { Type = UnknownHandlerEventType.UnknownHandler, DeliveryId = unknown.DeliveryId, HandlerKey = unknown.HandlerKey }.ToJson());
+        else
+            Fail(fault.ToString());
+    };
 
     try
     {

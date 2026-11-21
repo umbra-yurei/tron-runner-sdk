@@ -172,6 +172,9 @@ pub enum AdapterEventKind {
     ReportRejected,
 
     Stopped,
+
+    #[serde(rename = "unknown_handler")]
+    UnknownHandler,
 }
 
 /// The contents of conformance/adapters.json.
@@ -806,6 +809,25 @@ pub struct StoppedEvent {
 #[serde(rename_all = "snake_case")]
 pub enum StoppedEventType {
     Stopped,
+}
+
+/// The SDK surfaced a typed unknown-handler error: a delivery arrived for a handler key it
+/// has no handler for. It did not run a handler.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UnknownHandlerEvent {
+    pub delivery_id: String,
+
+    pub handler_key: String,
+
+    #[serde(rename = "type")]
+    pub unknown_handler_event_type: UnknownHandlerEventType,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnknownHandlerEventType {
+    #[serde(rename = "unknown_handler")]
+    UnknownHandler,
 }
 
 /// A run has been dispatched to this connection as one delivery. It

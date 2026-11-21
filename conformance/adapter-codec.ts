@@ -20,6 +20,7 @@ import {
   type StartCommand,
   type StopCommand,
   type StoppedEvent,
+  type UnknownHandlerEvent,
 } from "../packages/typescript/src/generated/protocol.ts";
 
 export type AdapterCommand = StartCommand | ReportPendingCommand | ListPendingCommand | StopCommand;
@@ -30,6 +31,7 @@ export type AdapterEvent =
   | HandlerInvokedEvent
   | DeliveryAcceptedEvent
   | AcceptRefusedEvent
+  | UnknownHandlerEvent
   | ReportRecordedEvent
   | ReportRejectedEvent
   | PendingEvent
@@ -50,6 +52,7 @@ const eventDecoders: Record<AdapterEventKind, (json: string) => AdapterEvent> = 
   handler_invoked: Convert.toHandlerInvokedEvent,
   delivery_accepted: Convert.toDeliveryAcceptedEvent,
   accept_refused: Convert.toAcceptRefusedEvent,
+  unknown_handler: Convert.toUnknownHandlerEvent,
   report_recorded: Convert.toReportRecordedEvent,
   report_rejected: Convert.toReportRejectedEvent,
   pending: Convert.toPendingEvent,
