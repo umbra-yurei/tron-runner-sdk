@@ -21,7 +21,7 @@ import {
 import { PROTOCOL_VERSION, RUNNER_CHANNEL_ADDRESS } from "./generated/protocol-version.ts";
 import { err } from "./outcome.ts";
 import type { SecretStore } from "./secret-store.ts";
-import { SDK_VERSION } from "./version.ts";
+import { SDK_VERSION } from "./generated/sdk-version.ts";
 
 const DEFAULT_BACKOFF_INITIAL_MS = 100;
 const DEFAULT_BACKOFF_MAX_MS = 5_000;

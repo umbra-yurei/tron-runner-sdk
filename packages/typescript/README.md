@@ -29,7 +29,7 @@ runner.handle("nightly-backup", async (delivery) => {
   }
 });
 
-runner.on("error", (error) => console.error(error.kind, error.message));
+runner.on("error", (error) => console.error(error.kind, error.message)); // kind is the closed RunnerErrorKind union
 
 await runner.start(); // rejects with a typed error if Tron is unreachable or refuses the key
 process.on("SIGTERM", () => void runner.stop()); // drains in-flight work first

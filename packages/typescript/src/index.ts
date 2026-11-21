@@ -17,6 +17,7 @@ export {
   UnreachableError,
   UnroutableDeliveryError,
 } from "./errors.ts";
+export type { RunnerErrorKind, SecretStoreAction } from "./errors.ts";
 export type { AcceptRefusal, ConnectFailure, ProtocolViolation, ReportRejection } from "./generated/protocol.ts";
 export { PROTOCOL_VERSION } from "./generated/protocol-version.ts";
-export { SDK_VERSION } from "./version.ts";
+export { SDK_VERSION } from "./generated/sdk-version.ts";

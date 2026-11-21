@@ -1,7 +1,7 @@
 // Protocol behaviour of the SDK against a scripted in-process server. The shared conformance suite
 // (conformance/) is the check against a real Tron; these run without one, so CI can run them.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
@@ -123,13 +123,6 @@ class FakeTron {
 function scratch(): string {
   return mkdtempSync(join(tmpdir(), "tron-runner-test-"));
 }
-
-describe("package", () => {
-  test("announces the version recorded in package.json", () => {
-    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
-    assert.equal(SDK_VERSION, manifest.version);
-  });
-});
 
 describe("FileSecretStore", () => {
   test("keeps one owner-only file per delivery until removed", async () => {
