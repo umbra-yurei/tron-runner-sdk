@@ -386,3 +386,193 @@ public sealed class DocumentedExampleTests : IAsyncLifetime
         await ws.SendAsync(bytes, WebSocketMessageType.Text, endOfMessage: true, default);
     }
 }
+
+public sealed class HandlerRoutingTests : IAsyncLifetime
+{
+    private readonly string directory = Path.Combine(Path.GetTempPath(), "tron-sdk-" + Guid.NewGuid().ToString("N"));
+    private readonly HttpListener listener = new();
+    private readonly TaskCompletionSource<Exception> fault = new();
+    private Task? serverTask;
+    private Uri tronUrl = null!;
+
+    public Task InitializeAsync()
+    {
+        var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+        tronUrl = new Uri($"http://127.0.0.1:{port}");
+        return Task.CompletedTask;
+    }
+
+    public async Task DisposeAsync()
+    {
+        listener.Stop();
+        listener.Close();
+        if (serverTask is not null)
+        {
+            try
+            {
+                await serverTask;
+            }
+            catch
+            {
+            }
+        }
+
+        try
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+        catch
+        {
+        }
+    }
+
+    private RunnerClient NewRunner()
+    {
+        var runner = new RunnerClient(new RunnerClientOptions
+        {
+            TronUrl = tronUrl,
+            Token = "routing-key",
+            SecretDirectory = directory,
+        });
+        runner.Faulted += exception => fault.TrySetResult(exception);
+        return runner;
+    }
+
+    [Fact]
+    public async Task EachKeyRunsItsOwnHandlerAndReportsItsOutcome()
+    {
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        var reports = new Dictionary<Guid, ReportFrame>();
+        serverTask = ServeAsync(async ws =>
+        {
+            await SendWorkAsync(ws, first, "alpha");
+            reports[first] = await AcceptAndReceiveReportAsync(ws, first);
+            await SendWorkAsync(ws, second, "beta");
+            reports[second] = await AcceptAndReceiveReportAsync(ws, second);
+        });
+
+        await using var runner = NewRunner();
+        var invoked = new List<string>();
+        runner.Handle("alpha", (_, _) =>
+        {
+            lock (invoked)
+            {
+                invoked.Add("alpha");
+            }
+
+            return Task.FromResult(Outcome.Ok("from alpha"));
+        });
+        runner.Handle("beta", (_, _) =>
+        {
+            lock (invoked)
+            {
+                invoked.Add("beta");
+            }
+
+            return Task.FromResult(Outcome.Err("from beta"));
+        });
+        await runner.ConnectAsync();
+        await serverTask.WaitAsync(TimeSpan.FromSeconds(10));
+        await runner.StopAsync();
+
+        Assert.Equal(new[] { "alpha", "beta" }, invoked);
+        Assert.Equal("from alpha", reports[first].Outcome.Ok);
+        Assert.Equal("from beta", reports[second].Outcome.Err);
+    }
+
+    [Fact]
+    public async Task AKeyWithNoHandlerIsNotAcceptedAndRaisesUnknownHandlerException()
+    {
+        var unknown = Guid.NewGuid();
+        var known = Guid.NewGuid();
+        serverTask = ServeAsync(async ws =>
+        {
+            await SendWorkAsync(ws, unknown, "missing");
+            // The next frame the runner sends must answer the known key: nothing was accepted for the unknown one.
+            await SendWorkAsync(ws, known, "alpha");
+            await AcceptAndReceiveReportAsync(ws, known);
+        });
+
+        await using var runner = NewRunner();
+        runner.Handle("alpha", (_, _) => Task.FromResult(Outcome.Ok("ok")));
+        await runner.ConnectAsync();
+        await serverTask.WaitAsync(TimeSpan.FromSeconds(10));
+        var raised = await fault.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await runner.StopAsync();
+
+        var exception = Assert.IsType<UnknownHandlerException>(raised);
+        Assert.Equal(unknown, exception.DeliveryId);
+        Assert.Equal("missing", exception.HandlerKey);
+    }
+
+    private Task ServeAsync(Func<WebSocket, Task> script) => Task.Run(async () =>
+    {
+        var context = await listener.GetContextAsync();
+        var ws = (await context.AcceptWebSocketAsync(null)).WebSocket;
+        using (ws)
+        {
+            Assert.NotNull(await ReadAsync<AuthenticateFrame>(ws));
+            await WriteAsync(ws, new AuthenticatedFrame
+            {
+                Type = AuthenticatedFrameType.Authenticated,
+                SessionId = Guid.NewGuid(),
+            });
+            Assert.NotNull(await ReadAsync<AnnounceFrame>(ws));
+            await WriteAsync(ws, new AnnouncedFrame { Type = AnnouncedFrameType.Announced });
+            await script(ws);
+        }
+    });
+
+    private static Task SendWorkAsync(WebSocket ws, Guid deliveryId, string handlerKey) => WriteAsync(ws, new WorkFrame
+    {
+        Type = WorkFrameType.Work,
+        DeliveryId = deliveryId,
+        JobId = Guid.NewGuid(),
+        HandlerKey = handlerKey,
+        JobName = "nightly",
+        RunId = Guid.NewGuid(),
+        ScheduledFor = DateTime.UtcNow.ToString("O"),
+        AcceptDeadline = DateTime.UtcNow.AddSeconds(30).ToString("O"),
+    });
+
+    private static async Task<ReportFrame> AcceptAndReceiveReportAsync(WebSocket ws, Guid deliveryId)
+    {
+        var accept = await ReadAsync<AcceptFrame>(ws);
+        Assert.NotNull(accept);
+        Assert.Equal(deliveryId, accept.DeliveryId);
+        await WriteAsync(ws, new AcceptedFrame
+        {
+            Type = AcceptedFrameType.Accepted,
+            DeliveryId = deliveryId,
+            Secret = "secret-" + deliveryId,
+        });
+        var report = await ReadAsync<ReportFrame>(ws);
+        Assert.NotNull(report);
+        await WriteAsync(ws, new ReportRecordedFrame
+        {
+            Type = ReportRecordedEventType.ReportRecorded,
+            DeliveryId = deliveryId,
+            Late = false,
+        });
+        return report;
+    }
+
+    private static async Task<T?> ReadAsync<T>(WebSocket ws)
+    {
+        var buffer = new byte[16 * 1024];
+        var received = await ws.ReceiveAsync(buffer, default);
+        return (T?)JsonSerializer.Deserialize(Encoding.UTF8.GetString(buffer, 0, received.Count), typeof(T), Converter.Settings);
+    }
+
+    private static Task WriteAsync(WebSocket ws, object frame) => ws.SendAsync(
+        Encoding.UTF8.GetBytes(JsonSerializer.Serialize(frame, frame.GetType(), Converter.Settings)),
+        WebSocketMessageType.Text,
+        endOfMessage: true,
+        default);
+}
