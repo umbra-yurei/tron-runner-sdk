@@ -22,7 +22,7 @@ public sealed class RunnerClient : IAsyncDisposable
     private readonly Dictionary<string, RunnerHandler> handlers = new(StringComparer.Ordinal);
     private readonly object gate = new();
     private readonly HashSet<Guid> unanswered = new();
-    private readonly Dictionary<Guid, Delivery> awaitingAcceptance = new();
+    private readonly Dictionary<Guid, (Delivery Delivery, RunnerHandler Handler)> awaitingAcceptance = new();
     private readonly Dictionary<Guid, TaskCompletionSource<ReportReceipt>> reportWaiters = new();
     private readonly TaskCompletionSource firstOutcome = NewSignal();
     private readonly CancellationTokenSource loopCts = new();
@@ -471,9 +471,9 @@ public sealed class RunnerClient : IAsyncDisposable
             return;
         }
 
-        if (handlers.Count != 1)
+        if (!handlers.TryGetValue(frame.HandlerKey, out var handler))
         {
-            Fault(new HandlerRoutingException(frame.DeliveryId, handlers.Count));
+            Fault(new UnknownHandlerException(frame.DeliveryId, frame.HandlerKey));
             return;
         }
 
@@ -491,7 +491,7 @@ public sealed class RunnerClient : IAsyncDisposable
 
         lock (gate)
         {
-            awaitingAcceptance[delivery.DeliveryId] = delivery;
+            awaitingAcceptance[delivery.DeliveryId] = (delivery, handler);
         }
 
         await session.SendAsync(new AcceptFrame { Type = AcceptFrameType.Accept, DeliveryId = delivery.DeliveryId }.ToJson(), token)
@@ -500,13 +500,14 @@ public sealed class RunnerClient : IAsyncDisposable
 
     private async Task OnAcceptedAsync(AcceptedFrame frame, CancellationToken token)
     {
-        Delivery? delivery;
+        (Delivery Delivery, RunnerHandler Handler) awaiting;
+        bool pushed;
         lock (gate)
         {
-            awaitingAcceptance.Remove(frame.DeliveryId, out delivery);
+            pushed = awaitingAcceptance.Remove(frame.DeliveryId, out awaiting);
         }
 
-        if (delivery is null)
+        if (!pushed)
         {
             Fault(new InvalidDataException($"Tron accepted delivery {frame.DeliveryId}, which was never pushed"));
             return;
@@ -524,8 +525,7 @@ public sealed class RunnerClient : IAsyncDisposable
         }
 
         Raise(DeliveryAccepted, frame.DeliveryId);
-        var handler = handlers.Values.Single();
-        _ = Task.Run(() => RunDeliveryAsync(delivery, handler), CancellationToken.None);
+        _ = Task.Run(() => RunDeliveryAsync(awaiting.Delivery, awaiting.Handler), CancellationToken.None);
     }
 
     private async Task RunDeliveryAsync(Delivery delivery, RunnerHandler handler)

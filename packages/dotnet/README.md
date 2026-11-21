@@ -39,6 +39,6 @@ await runner.StopAsync(); // finish in-flight work, report it, then close
 - Typed refusals: `AcceptRefusedException`, `ReportRejectedException`, `ConnectFailedException`,
   `ProtocolViolationException`.
 
-Known limit of protocol v1: `work` frames do not name the handler they were dispatched for, so a runner that
-registers more than one handler cannot route work and raises `HandlerRoutingException` through `Faulted` instead
-of accepting it. Register one handler per runner until Tron's protocol names the handler.
+Routing: register one handler per key with `Handle(key, handler)`; each `work` frame names the handler it was
+dispatched for (`HandlerKey`) and the SDK runs that handler. A delivery whose key has no registered handler is not
+accepted and raises `UnknownHandlerException` (with `DeliveryId` and `HandlerKey`) through `Faulted`.

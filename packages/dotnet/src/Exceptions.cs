@@ -68,16 +68,23 @@ public sealed class MissingSecretException : TronRunnerException
 }
 
 /// <summary>
-/// Work arrived for a runner that registered more than one handler. Protocol v1 does not say which handler a
-/// <c>work</c> frame is for, so the SDK refuses to guess: the delivery is not accepted.
+/// Work arrived for a handler key this runner did not register. The delivery is not accepted, so Tron will
+/// retry or fail it per the job's policy.
 /// </summary>
-public sealed class HandlerRoutingException : TronRunnerException
+public sealed class UnknownHandlerException : TronRunnerException
 {
-    public HandlerRoutingException(Guid deliveryId, int handlerCount)
-        : base($"delivery {deliveryId} cannot be routed: {handlerCount} handlers are registered and protocol v1 work frames carry no handler key")
-        => DeliveryId = deliveryId;
+    public UnknownHandlerException(Guid deliveryId, string handlerKey)
+        : base($"delivery {deliveryId} names handler '{handlerKey}', which this runner did not register")
+    {
+        DeliveryId = deliveryId;
+        HandlerKey = handlerKey;
+    }
 
+    /// <summary>The delivery that was not accepted.</summary>
     public Guid DeliveryId { get; }
+
+    /// <summary>The handler key the work frame named.</summary>
+    public string HandlerKey { get; }
 }
 
 /// <summary>The secret directory already exists and group or others can access it, so secrets stored there would not be private.</summary>
