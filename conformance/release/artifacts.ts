@@ -105,12 +105,12 @@ export async function stageTypeScript(context: StageContext): Promise<StagedSdk>
 export async function stagePython(context: StageContext): Promise<StagedSdk> {
   const { steps, tree, work } = context;
   mkdirSync(work, { recursive: true });
-  const wheels = join(work, "wheels");
-  await steps.run("python-wheel", ["python3", "-m", "pip", "wheel", "--no-deps", "--wheel-dir", wheels, join(tree, "packages/python")]);
-  const wheel = only(wheels, ".whl");
   const venv = join(work, "venv");
   await steps.run("python-venv", ["python3", "-m", "venv", venv]);
   const python = join(venv, "bin/python");
+  const wheels = join(work, "wheels");
+  await steps.run("python-wheel", [python, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", wheels, join(tree, "packages/python")]);
+  const wheel = only(wheels, ".whl");
   await steps.run("python-install", [python, "-m", "pip", "install", "--quiet", wheel]);
 
   // The adapter finds the SDK sources relative to its own location (three directories up); copied here, that path does not exist.
