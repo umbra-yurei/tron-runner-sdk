@@ -6,6 +6,11 @@
       "cwd": "."
     },
     {
+      "name": "typescript",
+      "command": ["node", "conformance/adapters/typescript/adapter.ts"],
+      "cwd": "."
+    },
+    {
       "name": "python",
       "command": ["packages/python/.venv/bin/python", "conformance/adapters/python/adapter.py"],
       "cwd": "."

@@ -1,0 +1,49 @@
+{
+  "name": "@cruma-io/tron-runner",
+  "version": "0.1.0",
+  "description": "Runner SDK for Tron: connect a worker, register handlers, and report Ok/Err results for scheduled jobs",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "tron",
+    "scheduler",
+    "runner",
+    "worker",
+    "cron",
+    "websocket"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umbra-yurei/tron-runner-sdk.git",
+    "directory": "packages/typescript"
+  },
+  "homepage": "https://github.com/umbra-yurei/tron-runner-sdk/tree/main/packages/typescript#readme",
+  "bugs": {
+    "url": "https://github.com/umbra-yurei/tron-runner-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\" && npm run build"
+  }
+}

@@ -9,6 +9,7 @@ one published protocol schema and held to one conformance suite.
 | `contract/` | The language-neutral [thin-SDK contract](contract/sdk-contract.md) and the authored adapter protocol schema |
 | `tools/` | Reproducible generation (`generate.ts`) and drift checks (`sync-protocol.ts`) |
 | `packages/<language>/` | Each SDK; its `generated/` message bindings and recorded protocol version are emitted, never hand-written |
+| `packages/typescript/` | `@cruma-io/tron-runner`: build with `npm run build:typescript`, test with `npm run test:typescript` |
 | `packages/dotnet/` | The `Cruma.Tron.Runner` NuGet package, its tests and its conformance adapter (`npm run build:dotnet-adapter`, `npm run test:dotnet`) |
 | `conformance/` | The shared [conformance suite](conformance/README.md) and a reference adapter |
 
@@ -28,7 +29,7 @@ The Python SDK's checks are `mypy` and `pytest` in `packages/python` (CI job `py
 [`packages/python/README.md`](packages/python/README.md). Its conformance adapter runs from a virtualenv at
 `packages/python/.venv`: `python3 -m venv packages/python/.venv && packages/python/.venv/bin/pip install -e 'packages/python[dev]'`.
 
-`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs only `check` and `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped).
+`check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs `check`, `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped) and each package's own build and tests.
 
 ## Updating the protocol
 
