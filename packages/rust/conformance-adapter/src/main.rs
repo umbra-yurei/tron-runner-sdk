@@ -30,6 +30,8 @@ fn fail(message: impl ToString) {
     });
 }
 
+const TAMPER_SUFFIX: &str = "-tampered";
+
 /// Returns a wrong secret from `load`, so Tron rejects the report.
 struct Tampered(FileSecretStore);
 
@@ -39,7 +41,7 @@ impl SecretStore for Tampered {
         self.0.save(delivery_id, secret).await
     }
     async fn load(&self, delivery_id: &str) -> Result<Option<String>, SecretStoreError> {
-        Ok(self.0.load(delivery_id).await?.map(|secret| secret + "-tampered"))
+        Ok(self.0.load(delivery_id).await?.map(|secret| secret + TAMPER_SUFFIX))
     }
     async fn remove(&self, delivery_id: &str) -> Result<(), SecretStoreError> {
         self.0.remove(delivery_id).await

@@ -7,6 +7,8 @@ use futures_util::future::BoxFuture;
 use std::{collections::BTreeMap, future::Future, sync::Arc, time::Duration};
 use tokio::sync::{mpsc, oneshot};
 
+const DEFAULT_SECRET_DIRECTORY: &str = "tron-runner-secrets";
+
 /// What a handler returns: `Ok(message)` marks the run succeeded, `Err(message)` marks it failed.
 pub type JobResult = Result<String, String>;
 
@@ -177,7 +179,7 @@ impl RunnerBuilder {
         }
         let store: Arc<dyn SecretStore> = match self.store {
             Some(store) => store,
-            None => Arc::new(FileSecretStore::new("tron-runner-secrets")?),
+            None => Arc::new(FileSecretStore::new(DEFAULT_SECRET_DIRECTORY)?),
         };
         let announcement = RunnerAnnouncement {
             concurrency_capacity: self.concurrency_capacity,

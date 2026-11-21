@@ -65,6 +65,6 @@ mod tests {
     #[test]
     fn supported_protocol_is_the_generated_protocol_version() {
         let encoded = serde_json::to_string(&SUPPORTED_PROTOCOL).unwrap();
-        assert_eq!(encoded, format!("\"{PROTOCOL_VERSION}\""));
+        assert_eq!(serde_json::from_str::<String>(&encoded).unwrap(), PROTOCOL_VERSION);
     }
 }

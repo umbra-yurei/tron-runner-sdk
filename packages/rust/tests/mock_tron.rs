@@ -1,10 +1,10 @@
 //! The SDK against a scripted Tron on a local socket, using only the generated frame types.
 use cruma_tron_runner::{
     protocol::{
-        AcceptRefusal, AcceptRefusedEventType, AcceptRefusedFrame, AcceptedFrame, AcceptedFrameType, AnnounceFrame, AnnouncedFrame,
-        AnnouncedFrameType, AuthenticatedFrame, AuthenticatedFrameType, AuthenticationFailedFrame, AuthenticationFailedFrameType,
-        ReportFrame, ReportRecordedEventType, ReportRecordedFrame, RunnerFrameKind, RunnerFrameTag, RunnerProtocolVersion, WorkFrame,
-        WorkFrameType,
+        AcceptFrame, AcceptRefusal, AcceptRefusedEventType, AcceptRefusedFrame, AcceptedFrame, AcceptedFrameType, AnnounceFrame,
+        AnnouncedFrame, AnnouncedFrameType, AuthenticateFrame, AuthenticatedFrame, AuthenticatedFrameType, AuthenticationFailedFrame,
+        AuthenticationFailedFrameType, ReportFrame, ReportRecordedEventType, ReportRecordedFrame, RunnerFrameKind, RunnerFrameTag,
+        RunnerProtocolVersion, WorkFrame, WorkFrameType,
     },
     Backoff, Endpoint, Error, Event, FileSecretStore, Runner, SecretStore, SDK_VERSION,
 };
@@ -52,7 +52,7 @@ async fn receive_as<T: DeserializeOwned>(server: &mut Server, kind: RunnerFrameK
 async fn welcome(listener: &TcpListener) -> (Server, AnnounceFrame) {
     let (stream, _) = listener.accept().await.unwrap();
     let mut server = accept_async(stream).await.unwrap();
-    receive_as::<serde_json::Value>(&mut server, RunnerFrameKind::Authenticate).await;
+    receive_as::<AuthenticateFrame>(&mut server, RunnerFrameKind::Authenticate).await;
     send(
         &mut server,
         &AuthenticatedFrame {
@@ -177,8 +177,8 @@ async fn announces_accepts_persists_reports_and_drains() {
     assert!(matches!(next_event(&mut events).await, Event::Connected { session_id } if session_id == "session"));
 
     send(&mut server, &work()).await;
-    let accept: serde_json::Value = receive_as(&mut server, RunnerFrameKind::Accept).await;
-    assert_eq!(accept["delivery_id"], DELIVERY);
+    let accept: AcceptFrame = receive_as(&mut server, RunnerFrameKind::Accept).await;
+    assert_eq!(accept.delivery_id, DELIVERY);
     send(
         &mut server,
         &AcceptedFrame {
@@ -228,7 +228,7 @@ async fn an_err_outcome_is_reported_as_err() {
     let (mut server, _) = welcome(&listener).await;
     let _runner = runner.await.unwrap().unwrap();
     send(&mut server, &work()).await;
-    receive_as::<serde_json::Value>(&mut server, RunnerFrameKind::Accept).await;
+    receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
     send(
         &mut server,
         &AcceptedFrame {
@@ -263,7 +263,7 @@ async fn a_refused_accept_is_a_typed_event_and_the_handler_does_not_run() {
     let runner = runner.await.unwrap().unwrap();
     next_event(&mut events).await;
     send(&mut server, &work()).await;
-    receive_as::<serde_json::Value>(&mut server, RunnerFrameKind::Accept).await;
+    receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
     send(
         &mut server,
         &AcceptRefusedFrame {
