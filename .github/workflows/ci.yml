@@ -63,3 +63,23 @@ jobs:
           npm install "$RUNNER_TEMP"/cruma-io-tron-runner-*.tgz
           node --input-type=module -e "import { Runner, PROTOCOL_VERSION } from '@cruma-io/tron-runner'; if (typeof Runner !== 'function' || PROTOCOL_VERSION === '') process.exit(1)"
         working-directory: ${{ runner.temp }}
+
+  rust-sdk:
+    name: Rust SDK builds, lints and is publishable
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/rust
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --locked
+      # Packages the crate as crates.io would and builds the packaged copy; does not upload.
+      - run: cargo publish --dry-run --locked

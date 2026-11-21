@@ -4,3 +4,4 @@ __pycache__/
 /conformance/.run
 /.binding-checks
 /packages/typescript/dist
+/packages/rust/target
