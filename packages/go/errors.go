@@ -76,16 +76,15 @@ func (e *ProtocolError) Error() string {
 	return fmt.Sprintf("tronrunner: protocol error: %s", e.Reason)
 }
 
-// UnroutableDeliveryError means a delivery arrived that cannot be matched to one handler.
-// Protocol v1 `work` frames do not carry the handler key they were dispatched for, so a runner
-// with several handlers cannot route; the delivery is not accepted rather than guessed at.
-type UnroutableDeliveryError struct {
-	DeliveryID   string
-	HandlerCount int
+// UnknownHandlerError means a delivery arrived for a handler key this runner has no handler
+// registered for; the delivery is not accepted.
+type UnknownHandlerError struct {
+	DeliveryID string
+	HandlerKey string
 }
 
-func (e *UnroutableDeliveryError) Error() string {
-	return fmt.Sprintf("tronrunner: cannot route delivery %s: %d handlers registered and the work frame names none", e.DeliveryID, e.HandlerCount)
+func (e *UnknownHandlerError) Error() string {
+	return fmt.Sprintf("tronrunner: delivery %s is for handler key %q, which has no registered handler", e.DeliveryID, e.HandlerKey)
 }
 
 // DeliveryAbandonedError means the connection was lost after a delivery was accepted-pending

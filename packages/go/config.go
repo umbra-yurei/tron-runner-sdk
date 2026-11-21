@@ -60,7 +60,7 @@ type Hooks struct {
 	// OnReportRecorded is called when Tron recorded a report and its stored secret was removed.
 	OnReportRecorded func(ReportRecorded)
 	// OnError receives the errors of work the runner does on its own: *AcceptRefusedError,
-	// *ReportRejectedError, *ProtocolError, *UnroutableDeliveryError, *DeliveryAbandonedError,
+	// *ReportRejectedError, *ProtocolError, *UnknownHandlerError, *DeliveryAbandonedError,
 	// *SecretStoreError, *UnexpectedFrameError, and a *ConnectError when a reconnect is refused
 	// for good (the runner then stops; see Wait).
 	OnError func(error)

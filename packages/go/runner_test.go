@@ -473,6 +473,7 @@ func TestRunnerDelivery_OkOutcome(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-123",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -605,6 +606,7 @@ func TestRunnerDelivery_ErrOutcome(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-err",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -702,6 +704,7 @@ func TestRunnerAcceptRefused(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-refused",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -794,6 +797,7 @@ func TestRunnerReportRejected(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-reject",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -896,9 +900,10 @@ func TestRunnerReportRejected(t *testing.T) {
 	r.Stop(context.Background())
 }
 
-func TestRunnerMultipleHandlers(t *testing.T) {
-	var errorReceived error
+func TestRunnerRoutesDeliveryToHandlerByKey(t *testing.T) {
 	var mu sync.Mutex
+	var invoked []string
+	reported := map[string]string{}
 
 	fakeTron := newFakeTron(t, func(ctx context.Context, ws *websocket.Conn) error {
 		_, err := newFakeRunnerHelper(ctx, ws, fakeRunnerOptions{
@@ -912,12 +917,107 @@ func TestRunnerMultipleHandlers(t *testing.T) {
 		ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		// Push a work frame; runner should NOT accept it because there are multiple handlers
+		for _, key := range []string{"handler-2", "handler-1"} {
+			work := generated.WorkFrame{
+				DeliveryID:     "delivery-" + key,
+				RunID:          "run-456",
+				JobID:          "job-789",
+				JobName:        "test-job",
+				HandlerKey:     key,
+				ScheduledFor:   time.Now().Format(time.RFC3339),
+				AcceptDeadline: time.Now().Add(10 * time.Second).Format(time.RFC3339),
+				Type:           generated.TypeWork,
+			}
+			if err := sendFrame(ctx2, ws, &work); err != nil {
+				return fmt.Errorf("send work: %w", err)
+			}
+			accept, err := readAcceptFrame(ctx2, ws)
+			if err != nil {
+				return fmt.Errorf("read accept: %w", err)
+			}
+			accepted := generated.AcceptedFrame{DeliveryID: accept.DeliveryID, Secret: "secret-" + key, Type: generated.TypeAccepted}
+			if err := sendFrame(ctx2, ws, &accepted); err != nil {
+				return fmt.Errorf("send accepted: %w", err)
+			}
+			report, err := readReportFrame(ctx2, ws)
+			if err != nil {
+				return fmt.Errorf("read report: %w", err)
+			}
+			if report.Outcome.Ok == nil {
+				return fmt.Errorf("report outcome for %s should be Ok", key)
+			}
+			mu.Lock()
+			reported[key] = *report.Outcome.Ok
+			mu.Unlock()
+			recorded := generated.ReportRecordedFrame{DeliveryID: report.DeliveryID, Type: generated.TypeReportRecorded}
+			if err := sendFrame(ctx2, ws, &recorded); err != nil {
+				return fmt.Errorf("send report_recorded: %w", err)
+			}
+		}
+		return nil
+	})
+	defer fakeTron.Close()
+
+	r, err := New(makeRunnerConfig(t, fakeTron.URL))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	for _, key := range []string{"handler-1", "handler-2"} {
+		key := key
+		if err := r.Handle(key, func(ctx context.Context, d Delivery) Outcome {
+			mu.Lock()
+			invoked = append(invoked, key)
+			mu.Unlock()
+			return Ok("done by " + key)
+		}); err != nil {
+			t.Fatalf("Handle %s: %v", key, err)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := r.Connect(ctx); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+
+	eventually(t, "both reports", func() bool { mu.Lock(); defer mu.Unlock(); return len(reported) == 2 })
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(invoked) != 2 || invoked[0] != "handler-2" || invoked[1] != "handler-1" {
+		t.Fatalf("handlers invoked in order %v, want [handler-2 handler-1]", invoked)
+	}
+	for _, key := range []string{"handler-1", "handler-2"} {
+		if want := "done by " + key; reported[key] != want {
+			t.Fatalf("outcome for %s: got %q, want %q", key, reported[key], want)
+		}
+	}
+	r.Stop(context.Background())
+}
+
+func TestRunnerUnknownHandlerKeyIsNotAccepted(t *testing.T) {
+	var errorReceived error
+	var mu sync.Mutex
+	var accepted bool
+
+	fakeTron := newFakeTron(t, func(ctx context.Context, ws *websocket.Conn) error {
+		_, err := newFakeRunnerHelper(ctx, ws, fakeRunnerOptions{
+			ExpectHandlerKeys: []string{"handler-1", "handler-2"},
+			ExpectCapacity:    1,
+		})
+		if err != nil {
+			return err
+		}
+
+		ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
 		work := generated.WorkFrame{
-			DeliveryID:     "delivery-multi",
+			DeliveryID:     "delivery-unknown",
 			RunID:          "run-456",
 			JobID:          "job-789",
 			JobName:        "test-job",
+			HandlerKey:     "no-such-handler",
 			ScheduledFor:   time.Now().Format(time.RFC3339),
 			AcceptDeadline: time.Now().Add(10 * time.Second).Format(time.RFC3339),
 			Type:           generated.TypeWork,
@@ -926,13 +1026,15 @@ func TestRunnerMultipleHandlers(t *testing.T) {
 			return fmt.Errorf("send work: %w", err)
 		}
 
-		// Try to read accept, should timeout because runner won't route
-		select {
-		case <-ctx2.Done():
-			return nil
-		case <-time.After(300 * time.Millisecond):
-			return nil
+		// The runner must not answer with an accept frame; give it time to (wrongly) do so.
+		readCtx, readCancel := context.WithTimeout(ctx2, 300*time.Millisecond)
+		defer readCancel()
+		if _, err := readAcceptFrame(readCtx, ws); err == nil {
+			mu.Lock()
+			accepted = true
+			mu.Unlock()
 		}
+		return nil
 	})
 	defer fakeTron.Close()
 
@@ -947,41 +1049,33 @@ func TestRunnerMultipleHandlers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-
-	if err := r.Handle("handler-1", func(ctx context.Context, d Delivery) Outcome {
-		return Ok("")
-	}); err != nil {
-		t.Fatalf("Handle 1: %v", err)
-	}
-
-	if err := r.Handle("handler-2", func(ctx context.Context, d Delivery) Outcome {
-		return Ok("")
-	}); err != nil {
-		t.Fatalf("Handle 2: %v", err)
+	for _, key := range []string{"handler-1", "handler-2"} {
+		if err := r.Handle(key, func(ctx context.Context, d Delivery) Outcome { return Ok("") }); err != nil {
+			t.Fatalf("Handle %s: %v", key, err)
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	if err := r.Connect(ctx); err != nil {
 		t.Fatalf("Connect: %v", err)
 	}
 
 	eventually(t, "OnError", func() bool { mu.Lock(); defer mu.Unlock(); return errorReceived != nil })
+	time.Sleep(400 * time.Millisecond)
 
 	mu.Lock()
-	if errorReceived == nil {
-		t.Fatal("OnError was not called")
+	defer mu.Unlock()
+	var unknownErr *UnknownHandlerError
+	if !errors.As(errorReceived, &unknownErr) {
+		t.Fatalf("OnError: expected *UnknownHandlerError, got %T", errorReceived)
 	}
-	var unroutableErr *UnroutableDeliveryError
-	if !errors.As(errorReceived, &unroutableErr) {
-		t.Fatalf("OnError: expected *UnroutableDeliveryError, got %T", errorReceived)
+	if unknownErr.DeliveryID != "delivery-unknown" || unknownErr.HandlerKey != "no-such-handler" {
+		t.Fatalf("OnError: unexpected error fields %+v", unknownErr)
 	}
-	if unroutableErr.HandlerCount != 2 {
-		t.Fatalf("OnError: expected 2 handlers, got %d", unroutableErr.HandlerCount)
+	if accepted {
+		t.Fatal("runner accepted a delivery for an unregistered handler key")
 	}
-	mu.Unlock()
-
 	r.Stop(context.Background())
 }
 
@@ -1001,6 +1095,7 @@ func TestRunnerPanicHandler(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-panic",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -1167,6 +1262,7 @@ func TestRunnerStop(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-stop",
 			RunID:          "run-456",
 			JobID:          "job-789",
@@ -1289,6 +1385,7 @@ func TestRunnerStop_ExpiredContext(t *testing.T) {
 		defer cancel()
 
 		work := generated.WorkFrame{
+			HandlerKey:     "handler-1",
 			DeliveryID:     "delivery-stop",
 			RunID:          "run-456",
 			JobID:          "job-789",

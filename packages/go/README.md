@@ -50,9 +50,9 @@ other SDKs.
 Errors reach you through `Hooks.OnError` (work the runner does on its own) or a return value, always as the typed
 errors in `errors.go`; match them with `errors.As`.
 
-A runner with more than one handler cannot route a delivery in protocol `v1`, because a `work` frame does not name
-the handler key it was dispatched for (see the contract's *Known protocol gap*). Such a delivery is not accepted and
-surfaces as `*UnroutableDeliveryError` through `OnError`.
+A `work` frame names the handler key it was dispatched for, and the runner calls the handler registered for that key
+with `Handle`. A delivery for a key with no registered handler is not accepted and surfaces as `*UnknownHandlerError`
+through `OnError`.
 
 ## Layout
 
