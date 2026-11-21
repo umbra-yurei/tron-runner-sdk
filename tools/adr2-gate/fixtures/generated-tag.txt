@@ -1,0 +1,4 @@
+import type { Tag } from "./generated/probe.ts";
+export function tagName(tag: Tag): string {
+  return tag.type;
+}

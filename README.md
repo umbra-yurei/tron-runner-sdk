@@ -17,7 +17,8 @@ Needs Node >= 22.18 (it runs the TypeScript tooling directly).
 ```sh
 npm ci
 npm run generate          # rewrite every package's bindings from protocol/asyncapi.json
-npm run check             # CI: fail on stale generated output, then type-check tooling and harness
+npm run check             # CI: fail on stale generated output, type-check tooling and harness, then run the ADR-2 gate
+npm run check:adr2        # the ADR-2 structural gate on its own (see below)
 npm run sync:protocol     # refresh protocol/ from a Tron checkout (TRON_DIR=../tron) or a running one (TRON_URL=...)
 npm run check:bindings    # build each language's generated bindings with its own toolchain and round-trip sample messages
 npm run check:protocol    # fail if protocol/ has drifted from Tron
@@ -25,6 +26,16 @@ npm run conformance       # run every adapter against a real Tron; see conforman
 ```
 
 `check:protocol` and `conformance` need Tron (a checkout or a running dev-mode instance), so CI runs only `check` and `check:bindings --require-all` (which needs Rust, Python, Go and .NET toolchains; locally a language whose toolchain is missing is skipped).
+
+## ADR-2: typed JSON only
+
+`npm run check:adr2` fails if any script in the repository, tests and conformance tooling included, handles a JSON
+document of known shape without the generated decoders (`Convert.toX` / `Convert.xToJson`): `JSON.parse` or `.json()`,
+an `any`/`unknown` value that is cast or probed field by field, an ad-hoc `{ type: string }` tag record, a hand-written
+JSON string, or `JSON.stringify` of a literal. It reads types from the compiler, so aliasing or wrapping does not hide a
+violation. Genuinely opaque passthrough and schema-generation inputs may carry an `adr2-opaque` exception comment with a
+reason (see `tools/adr2-gate/gate.ts`); the number of exceptions is capped in `tools/check-adr2.ts`, so adding one is a
+visible change. The gate's own tests are in `tools/adr2-gate/`.
 
 ## Updating the protocol
 

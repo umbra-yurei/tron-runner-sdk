@@ -1,0 +1,4 @@
+export const frame = JSON.stringify({ type: "authenticate", token: "t" });
+export function dump(value: unknown): string {
+  return JSON.stringify(value);
+}

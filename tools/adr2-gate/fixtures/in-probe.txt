@@ -1,0 +1,3 @@
+export function hasType(value: object): boolean {
+  return "type" in value;
+}

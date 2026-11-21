@@ -1,0 +1,24 @@
+interface AcceptFrame {
+  type: "accept";
+  delivery_id: string;
+}
+const decoders = { accept: (json: string): AcceptFrame => ({ type: "accept", delivery_id: json }) };
+export function encode(frame: AcceptFrame): string {
+  return JSON.stringify(frame);
+}
+export function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+export function rethrow(): string {
+  try {
+    return "ok";
+  } catch (caught) {
+    return (caught as Error).message;
+  }
+}
+export const mode = "fast" as const;
+export const decoded = decoders.accept("d1");
+export function discriminate(frame: AcceptFrame | { ok: true }): boolean {
+  return "ok" in frame;
+}
+export const noise = "braces { and [ are fine } in prose";

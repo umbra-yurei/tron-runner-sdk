@@ -67,6 +67,7 @@ export async function render(): Promise<Map<string, string>> {
     );
   }
   // Tron's REST types, for the conformance harness only (never a package).
+  // adr2-opaque: schema-generation input; openapi-typescript consumes the whole OpenAPI document and our code reads nothing from it
   const openapi = JSON.parse(readFileSync(openapiPath, "utf8")) as OpenAPI3;
   const rest = astToString(await openapiTS(openapi));
   files.set(

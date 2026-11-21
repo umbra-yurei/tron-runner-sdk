@@ -1,0 +1,4 @@
+export interface Tagged {
+  type: string;
+}
+export type Probe = { kind: string; extra: number };

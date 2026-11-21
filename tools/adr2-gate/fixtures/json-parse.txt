@@ -1,0 +1,2 @@
+import { readFileSync } from "node:fs";
+export const document = JSON.parse(readFileSync("x.json", "utf8"));
