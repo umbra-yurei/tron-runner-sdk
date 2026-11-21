@@ -1,0 +1,64 @@
+{
+  "examples": [
+    {
+      "id": "rust",
+      "label": "Rust",
+      "registry": "crates.io",
+      "package": "cruma-tron-runner",
+      "packageUrl": "https://crates.io/crates/cruma-tron-runner",
+      "install": [
+        "cargo add cruma-tron-runner"
+      ],
+      "fence": "rust",
+      "snippet": "use cruma_tron_runner::{Endpoint, FileSecretStore, Runner};\n\nlet endpoint = Endpoint::from_base_url(&std::env::var(\"TRON_URL\")?)?;\nlet runner = Runner::builder(endpoint, std::env::var(\"TRON_WORKER_KEY\")?)\n    .secret_store(FileSecretStore::new(std::env::var(\"TRON_SECRET_DIR\")?)?)\n    .on(\"send-report\", |job| async move {\n        // Ok marks the run succeeded and Err marks it failed; both carry a message.\n        Ok(format!(\"sent the report for {}\", job.job_name))\n    })\n    .connect()\n    .await?;\n\n// ... keep the process alive; when it is told to shut down:\n// finish in-flight work, report it, then close\nrunner.stop().await;\n"
+    },
+    {
+      "id": "python",
+      "label": "Python",
+      "registry": "PyPI",
+      "package": "cruma-tron-runner",
+      "packageUrl": "https://pypi.org/project/cruma-tron-runner/",
+      "install": [
+        "pip install cruma-tron-runner"
+      ],
+      "fence": "python",
+      "snippet": "import os\n\nfrom tron_runner import Delivery, FileSecretStore, Ok, Outcome, Runner\n\nrunner = Runner(\n    os.environ[\"TRON_URL\"],\n    os.environ[\"TRON_WORKER_KEY\"],\n    secret_store=FileSecretStore(os.environ[\"TRON_SECRET_DIR\"]),\n)\n\nasync def send_report(delivery: Delivery) -> Outcome:\n    # Ok marks the run succeeded and Err marks it failed; both carry a message.\n    return Ok(f\"sent the report for {delivery.job_name}\")\n\nrunner.register(\"send-report\", send_report)\nasync with runner:\n    ...  # keep the process alive; leaving this block finishes in-flight work, reports it, then closes\n"
+    },
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "registry": "npm",
+      "package": "@cruma-io/tron-runner",
+      "packageUrl": "https://www.npmjs.com/package/@cruma-io/tron-runner",
+      "install": [
+        "npm install @cruma-io/tron-runner"
+      ],
+      "fence": "ts",
+      "snippet": "import { FileSecretStore, ok, Runner } from \"@cruma-io/tron-runner\";\n\nconst runner = new Runner({\n  url: process.env.TRON_URL!,\n  token: process.env.TRON_WORKER_KEY!,\n  secretStore: new FileSecretStore(process.env.TRON_SECRET_DIR!),\n});\n\nrunner.handle(\"send-report\", (delivery) => {\n  // Ok marks the run succeeded and Err marks it failed; both carry a message.\n  return ok(`sent the report for ${delivery.jobName}`);\n});\n\nawait runner.start();\n// ... keep the process alive; when it is told to shut down:\nawait runner.stop(); // finish in-flight work, report it, then close\n"
+    },
+    {
+      "id": "dotnet",
+      "label": ".NET",
+      "registry": "NuGet",
+      "package": "Cruma.Tron.Runner",
+      "packageUrl": "https://www.nuget.org/packages/Cruma.Tron.Runner",
+      "install": [
+        "dotnet add package Cruma.Tron.Runner"
+      ],
+      "fence": "csharp",
+      "snippet": "using Cruma.Tron.Runner;\n\nawait using var runner = new RunnerClient(new RunnerClientOptions\n{\n    TronUrl = new Uri(Environment.GetEnvironmentVariable(\"TRON_URL\")!),\n    Token = Environment.GetEnvironmentVariable(\"TRON_WORKER_KEY\")!,\n    SecretDirectory = Environment.GetEnvironmentVariable(\"TRON_SECRET_DIR\")!,\n});\n\nrunner.Handle(\"send-report\", (delivery, cancellationToken) =>\n{\n    // Ok marks the run succeeded and Err marks it failed; both carry a message.\n    return Task.FromResult(Outcome.Ok($\"sent the report for {delivery.JobName}\"));\n});\n\nawait runner.ConnectAsync();\n\n// ... keep the process alive; when it is told to shut down:\nawait runner.StopAsync(); // finish in-flight work, report it, then close\n"
+    },
+    {
+      "id": "go",
+      "label": "Go",
+      "registry": "pkg.go.dev",
+      "package": "github.com/umbra-yurei/tron-runner-sdk/packages/go",
+      "packageUrl": "https://pkg.go.dev/github.com/umbra-yurei/tron-runner-sdk/packages/go",
+      "install": [
+        "go get github.com/umbra-yurei/tron-runner-sdk/packages/go"
+      ],
+      "fence": "go",
+      "snippet": "store, err := tronrunner.NewFileSecretStore(os.Getenv(\"TRON_SECRET_DIR\"))\nif err != nil {\n\treturn err\n}\nrunner, err := tronrunner.New(tronrunner.Config{\n\tBaseURL:     os.Getenv(\"TRON_URL\"),\n\tToken:       os.Getenv(\"TRON_WORKER_KEY\"),\n\tSecretStore: store,\n})\nif err != nil {\n\treturn err\n}\n\nrunner.Handle(\"send-report\", func(ctx context.Context, d tronrunner.Delivery) tronrunner.Outcome {\n\t// Ok marks the run succeeded and Err marks it failed; both carry a message.\n\treturn tronrunner.Ok(\"sent the report for \" + d.JobName)\n})\n\nif err := runner.Connect(ctx); err != nil {\n\treturn err\n}\n\n// ... keep the process alive; when it is told to shut down:\nreturn runner.Stop(context.Background()) // finish in-flight work, report it, then close\n"
+    }
+  ]
+}

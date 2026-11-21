@@ -4,27 +4,34 @@
 authenticates with a worker API key, announces the handlers it can run, accepts each delivery immediately,
 persists the delivery's one-time secret, runs your handler and reports exactly one `Ok` or `Err`.
 
+<!-- tron-runner-example:start -->
 ```go
-runner, err := tronrunner.New(tronrunner.Config{
-	BaseURL: "https://tron.example.com",
-	Token:   os.Getenv("TRON_WORKER_KEY"),
-	Hooks:   tronrunner.Hooks{OnError: func(err error) { log.Print(err) }},
-})
-if err != nil { log.Fatal(err) }
-
-runner.Handle("backup", func(ctx context.Context, d tronrunner.Delivery) tronrunner.Outcome {
-	if err := backup(ctx, d.JobName); err != nil {
-		return tronrunner.Err(err.Error())
-	}
-	return tronrunner.Ok("backed up")
-})
-
-if err := runner.Connect(ctx); err != nil { // *tronrunner.ConnectError
-	log.Fatal(err)
+store, err := tronrunner.NewFileSecretStore(os.Getenv("TRON_SECRET_DIR"))
+if err != nil {
+	return err
 }
-<-ctx.Done()
-_ = runner.Stop(context.Background()) // stop taking work, finish and report what is in flight, close
+runner, err := tronrunner.New(tronrunner.Config{
+	BaseURL:     os.Getenv("TRON_URL"),
+	Token:       os.Getenv("TRON_WORKER_KEY"),
+	SecretStore: store,
+})
+if err != nil {
+	return err
+}
+
+runner.Handle("send-report", func(ctx context.Context, d tronrunner.Delivery) tronrunner.Outcome {
+	// Ok marks the run succeeded and Err marks it failed; both carry a message.
+	return tronrunner.Ok("sent the report for " + d.JobName)
+})
+
+if err := runner.Connect(ctx); err != nil {
+	return err
+}
+
+// ... keep the process alive; when it is told to shut down:
+return runner.Stop(context.Background()) // finish in-flight work, report it, then close
 ```
+<!-- tron-runner-example:end -->
 
 What it does is specified once, language-neutrally, in [`contract/sdk-contract.md`](../../contract/sdk-contract.md) and
 checked by the shared [conformance suite](../../conformance/README.md); this package is held to the same cases as the

@@ -5,25 +5,25 @@ schedules, and report each result. It is a thin client over Tron's published run
 every protocol message is a type generated from that document, and the SDK speaks exactly protocol version
 `cruma_tron_runner::PROTOCOL_VERSION` (`v1`).
 
+<!-- tron-runner-example:start -->
 ```rust
-use cruma_tron_runner::{Endpoint, Runner};
+use cruma_tron_runner::{Endpoint, FileSecretStore, Runner};
 
-#[tokio::main]
-async fn main() -> Result<(), cruma_tron_runner::Error> {
-    let runner = Runner::builder(Endpoint::from_base_url("https://tron.example.com")?, std::env::var("TRON_WORKER_KEY").unwrap())
-        .display_name("nightly-worker")
-        .on("send-report", |job| async move {
-            // Ok marks the run succeeded, Err marks it failed; both carry a message.
-            Ok(format!("sent the report for {}", job.job_name))
-        })
-        .connect()
-        .await?;
+let endpoint = Endpoint::from_base_url(&std::env::var("TRON_URL")?)?;
+let runner = Runner::builder(endpoint, std::env::var("TRON_WORKER_KEY")?)
+    .secret_store(FileSecretStore::new(std::env::var("TRON_SECRET_DIR")?)?)
+    .on("send-report", |job| async move {
+        // Ok marks the run succeeded and Err marks it failed; both carry a message.
+        Ok(format!("sent the report for {}", job.job_name))
+    })
+    .connect()
+    .await?;
 
-    tokio::signal::ctrl_c().await.ok();
-    runner.stop().await; // finish in-flight work, report it, then close
-    Ok(())
-}
+// ... keep the process alive; when it is told to shut down:
+// finish in-flight work, report it, then close
+runner.stop().await;
 ```
+<!-- tron-runner-example:end -->
 
 ## What it does
 

@@ -333,3 +333,69 @@ async fn several_handlers_cannot_be_routed_so_the_delivery_is_not_accepted() {
     ));
     runner.stop().await;
 }
+
+/// The runner shown in the documentation, run as written. Tron's address, the worker key and the secret directory
+/// come from the environment, so the only difference from a user's program is the values the test puts there.
+#[tokio::test]
+async fn the_documented_example_runs_a_delivery_and_reports_it() -> Result<(), Box<dyn std::error::Error>> {
+    let (listener, endpoint) = listen().await;
+    let directory = tempfile::tempdir()?;
+    std::env::set_var("TRON_URL", endpoint.websocket_url().replacen("ws://", "http://", 1));
+    std::env::set_var("TRON_WORKER_KEY", "documented-key");
+    std::env::set_var("TRON_SECRET_DIR", directory.path());
+
+    let (reported_sender, reported) = tokio::sync::oneshot::channel();
+    let tron = tokio::spawn(async move {
+        let (mut server, announce) = welcome(&listener).await;
+        send(&mut server, &work()).await;
+        receive_as::<AcceptFrame>(&mut server, RunnerFrameKind::Accept).await;
+        send(
+            &mut server,
+            &AcceptedFrame {
+                delivery_id: DELIVERY.into(),
+                secret: "the-secret".into(),
+                accepted_frame_type: AcceptedFrameType::Accepted,
+            },
+        )
+        .await;
+        let report: ReportFrame = receive_as(&mut server, RunnerFrameKind::Report).await;
+        reported_sender.send(()).unwrap();
+        send(
+            &mut server,
+            &ReportRecordedFrame {
+                delivery_id: DELIVERY.into(),
+                late: false,
+                report_recorded_frame_type: ReportRecordedEventType::ReportRecorded,
+            },
+        )
+        .await;
+        (announce, report)
+    });
+
+    // docs:start
+    use cruma_tron_runner::{Endpoint, FileSecretStore, Runner};
+
+    let endpoint = Endpoint::from_base_url(&std::env::var("TRON_URL")?)?;
+    let runner = Runner::builder(endpoint, std::env::var("TRON_WORKER_KEY")?)
+        .secret_store(FileSecretStore::new(std::env::var("TRON_SECRET_DIR")?)?)
+        .on("send-report", |job| async move {
+            // Ok marks the run succeeded and Err marks it failed; both carry a message.
+            Ok(format!("sent the report for {}", job.job_name))
+        })
+        .connect()
+        .await?;
+
+    // ... keep the process alive; when it is told to shut down:
+    // docs:hide
+    reported.await?;
+    // docs:show
+    // finish in-flight work, report it, then close
+    runner.stop().await;
+    // docs:end
+
+    let (announce, report) = tron.await?;
+    assert_eq!(announce.announcement.handler_keys, ["send-report"]);
+    assert_eq!(report.outcome.ok.as_deref(), Some("sent the report for nightly"));
+    assert_eq!((report.delivery_id.as_str(), report.secret.as_str()), (DELIVERY, "the-secret"));
+    Ok(())
+}

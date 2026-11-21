@@ -1,3 +1,10 @@
+using System.Net;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+// docs:start
+using Cruma.Tron.Runner;
+// docs:end
 using Cruma.Tron.Runner.Generated;
 using Xunit;
 
@@ -160,5 +167,218 @@ public sealed class FileSecretStoreTests : IDisposable
         var restarted = new FileSecretStore(directory);
         Assert.Equal(new[] { deliveryId }, await restarted.PendingAsync(default));
         Assert.Equal("s3cret", await restarted.LoadAsync(deliveryId, default));
+    }
+}
+
+public sealed class DocumentedExampleTests : IAsyncLifetime
+{
+    private readonly string directory = Path.Combine(Path.GetTempPath(), "tron-sdk-" + Guid.NewGuid().ToString("N"));
+    private HttpListener? listener;
+    private Task? serverTask;
+    private readonly Guid deliveryId = Guid.Parse("5b6c1c0e-2f0a-4c8e-9d54-0a7a1d6a2b01");
+    private const string Secret = "the-secret";
+    private readonly TaskCompletionSource reportReceived = new();
+
+    public async Task InitializeAsync()
+    {
+        listener = new HttpListener();
+        var port = new Random().Next(10000, 20000);
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+
+        Environment.SetEnvironmentVariable("TRON_URL", $"http://127.0.0.1:{port}");
+        Environment.SetEnvironmentVariable("TRON_WORKER_KEY", "documented-key");
+        Environment.SetEnvironmentVariable("TRON_SECRET_DIR", directory);
+
+        serverTask = RunMockTronAsync(listener);
+        await Task.Yield();
+    }
+
+    public async Task DisposeAsync()
+    {
+        reportReceived.TrySetCanceled();
+        listener?.Stop();
+        listener?.Close();
+        if (serverTask is not null)
+        {
+            await serverTask;
+        }
+
+        try
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+        catch
+        {
+        }
+
+        Environment.SetEnvironmentVariable("TRON_URL", null);
+        Environment.SetEnvironmentVariable("TRON_WORKER_KEY", null);
+        Environment.SetEnvironmentVariable("TRON_SECRET_DIR", null);
+    }
+
+    [Fact]
+    public async Task DocumentedExampleRunsADeliveryAndReportsIt()
+    {
+        // docs:start
+        await using var runner = new RunnerClient(new RunnerClientOptions
+        {
+            TronUrl = new Uri(Environment.GetEnvironmentVariable("TRON_URL")!),
+            Token = Environment.GetEnvironmentVariable("TRON_WORKER_KEY")!,
+            SecretDirectory = Environment.GetEnvironmentVariable("TRON_SECRET_DIR")!,
+        });
+
+        runner.Handle("send-report", (delivery, cancellationToken) =>
+        {
+            // Ok marks the run succeeded and Err marks it failed; both carry a message.
+            return Task.FromResult(Outcome.Ok($"sent the report for {delivery.JobName}"));
+        });
+
+        await runner.ConnectAsync();
+
+        // ... keep the process alive; when it is told to shut down:
+        // docs:hide
+        await reportReceived.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        // docs:show
+        await runner.StopAsync(); // finish in-flight work, report it, then close
+        // docs:end
+    }
+
+    private async Task RunMockTronAsync(HttpListener listener)
+    {
+        try
+        {
+            while (listener.IsListening)
+            {
+                HttpListenerContext context;
+                try
+                {
+                    context = await listener.GetContextAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+
+                if (!context.Request.IsWebSocketRequest)
+                {
+                    context.Response.StatusCode = 404;
+                    context.Response.Close();
+                    continue;
+                }
+
+                try
+                {
+                    var wsContext = await context.AcceptWebSocketAsync(null).ConfigureAwait(false);
+                    var ws = wsContext.WebSocket;
+                    await HandleClientAsync(ws).ConfigureAwait(false);
+                }
+                catch
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.Close();
+                }
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task HandleClientAsync(WebSocket ws)
+    {
+        try
+        {
+            using (ws)
+            {
+                // Read authenticate frame
+                var auth = await ReadFrameAsync<AuthenticateFrame>(ws);
+                Assert.NotNull(auth);
+
+                // Send authenticated
+                var authenticated = new AuthenticatedFrame
+                {
+                    Type = AuthenticatedFrameType.Authenticated,
+                    SessionId = Guid.Parse("00000000-0000-0000-0000-000000000123"),
+                };
+                await SendFrameAsync(ws, authenticated);
+
+                // Read announce frame
+                var announce = await ReadFrameAsync<AnnounceFrame>(ws);
+                Assert.NotNull(announce);
+                Assert.Equal(new[] { "send-report" }, announce.Announcement.HandlerKeys);
+
+                // Send announced
+                var announced = new AnnouncedFrame { Type = AnnouncedFrameType.Announced };
+                await SendFrameAsync(ws, announced);
+
+                // Send work
+                var work = new WorkFrame
+                {
+                    Type = WorkFrameType.Work,
+                    DeliveryId = deliveryId,
+                    JobId = Guid.Parse("00000000-0000-0000-0000-000000000789"),
+                    JobName = "nightly",
+                    RunId = Guid.Parse("00000000-0000-0000-0000-000000000456"),
+                    ScheduledFor = DateTime.UtcNow.ToString("O"),
+                    AcceptDeadline = DateTime.UtcNow.AddSeconds(30).ToString("O"),
+                };
+                await SendFrameAsync(ws, work);
+
+                // Read accept frame
+                var accept = await ReadFrameAsync<AcceptFrame>(ws);
+                Assert.NotNull(accept);
+
+                // Send accepted
+                var accepted = new AcceptedFrame
+                {
+                    Type = AcceptedFrameType.Accepted,
+                    DeliveryId = deliveryId,
+                    Secret = Secret,
+                };
+                await SendFrameAsync(ws, accepted);
+
+                // Read report frame
+                var report = await ReadFrameAsync<ReportFrame>(ws);
+                Assert.NotNull(report);
+                Assert.Equal(Secret, report.Secret);
+                Assert.Equal("sent the report for nightly", report.Outcome.Ok);
+
+                reportReceived.TrySetResult();
+
+                // Send report recorded
+                var recorded = new ReportRecordedFrame
+                {
+                    Type = ReportRecordedEventType.ReportRecorded,
+                    DeliveryId = deliveryId,
+                    Late = false,
+                };
+                await SendFrameAsync(ws, recorded);
+            }
+        }
+        catch (Exception ex)
+        {
+            reportReceived.TrySetException(ex);
+        }
+    }
+
+    private static async Task<T?> ReadFrameAsync<T>(WebSocket ws)
+    {
+        var buffer = new byte[16 * 1024];
+        var received = await ws.ReceiveAsync(buffer, default);
+        if (received.MessageType != WebSocketMessageType.Text)
+        {
+            throw new InvalidOperationException("Expected text frame");
+        }
+
+        var json = Encoding.UTF8.GetString(buffer, 0, received.Count);
+        return (T?)JsonSerializer.Deserialize(json, typeof(T), Converter.Settings);
+    }
+
+    private static async Task SendFrameAsync(WebSocket ws, object frame)
+    {
+        var json = JsonSerializer.Serialize(frame, frame.GetType(), Converter.Settings);
+        var bytes = Encoding.UTF8.GetBytes(json);
+        await ws.SendAsync(bytes, WebSocketMessageType.Text, endOfMessage: true, default);
     }
 }

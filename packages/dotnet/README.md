@@ -6,26 +6,29 @@ result as `Outcome.Ok(...)` or `Outcome.Err(...)`.
 
 Protocol messages are generated from Tron's published AsyncAPI document; the SDK holds no hand-written wire model.
 
+<!-- tron-runner-example:start -->
 ```csharp
 using Cruma.Tron.Runner;
 
 await using var runner = new RunnerClient(new RunnerClientOptions
 {
-    TronUrl = new Uri("https://tron.example.com"),
+    TronUrl = new Uri(Environment.GetEnvironmentVariable("TRON_URL")!),
     Token = Environment.GetEnvironmentVariable("TRON_WORKER_KEY")!,
-    SecretDirectory = "/var/lib/my-runner/secrets",
+    SecretDirectory = Environment.GetEnvironmentVariable("TRON_SECRET_DIR")!,
 });
 
-runner.Handle("backup", async (delivery, cancellationToken) =>
+runner.Handle("send-report", (delivery, cancellationToken) =>
 {
-    await RunBackupAsync(delivery.JobName, cancellationToken);
-    return Outcome.Ok("backup finished");
+    // Ok marks the run succeeded and Err marks it failed; both carry a message.
+    return Task.FromResult(Outcome.Ok($"sent the report for {delivery.JobName}"));
 });
 
-await runner.ConnectAsync();   // throws ConnectFailedException when Tron cannot be reached or rejects the key
-// ... run until shutdown ...
-await runner.StopAsync();      // takes no new work, waits for in-flight handlers and Tron's answers to their reports
+await runner.ConnectAsync();
+
+// ... keep the process alive; when it is told to shut down:
+await runner.StopAsync(); // finish in-flight work, report it, then close
 ```
+<!-- tron-runner-example:end -->
 
 - Reconnects after a lost connection with a capped backoff and announces again.
 - Accepts each delivery immediately, then runs your handler; a handler that throws is reported as `Err`.
