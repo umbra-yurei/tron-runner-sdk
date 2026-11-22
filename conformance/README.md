@@ -13,6 +13,7 @@ npm run conformance                                    # starts Tron from ../tro
 TRON_URL=http://127.0.0.1:8090 npm run conformance     # attach to a running AUTH_MODE=dev Tron instead
 npm run conformance -- --adapter reference-typescript --scenario drains
 npm run conformance -- --list
+npm run conformance -- --concurrency 1                # cases run 8 at a time by default; 1 runs them strictly in order
 ```
 
 Adapters that need a build step are built first: `npm run build:dotnet-adapter` for `dotnet` (.NET 8 SDK).
