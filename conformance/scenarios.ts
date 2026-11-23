@@ -1,6 +1,6 @@
 // The conformance cases every SDK adapter must pass. Each runs against a real Tron
-// (Postgres + the real runner WebSocket) as its own dev user. Capacity cases are added
-// once Tron's capacity-aware dispatch lands (board task e58057dd).
+// (Postgres + the real runner WebSocket) as its own dev user. None of them tests
+// Tron's capacity-aware dispatch.
 import { handler, ScenarioContext } from "./context.ts";
 import type { DeliveryState } from "./tron-client.ts";
 import { PROTOCOL_VERSION } from "../packages/typescript/src/generated/protocol-version.ts";
