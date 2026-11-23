@@ -54,8 +54,8 @@ work directory, which is kept on failure anyway, in `conformance/.run/release/<r
 
 authentication and announce; typed failure for a bad token and an unreachable Tron; reconnect after a dropped
 connection; handler-filtered delivery; two handlers on one runner each receiving the delivery for their own `handler_key`; accept + `Ok`; accept + `Err`; restart between accept and report;
-`wrong_secret`, `not_in_flight` and `delivery_timed_out` rejections; graceful drain (in-flight work finishes and its report acknowledgement arrives, with the proxy holding the acknowledgement, before `stopped`). Capacity cases are added after
-Tron's capacity-aware dispatch (board task `e58057dd`) lands.
+`wrong_secret`, `not_in_flight` and `delivery_timed_out` rejections; graceful drain (in-flight work finishes and its report acknowledgement arrives, with the proxy holding the acknowledgement, before `stopped`). The suite has no capacity cases: it does not test how many deliveries
+Tron sends a runner at once, or any other part of Tron's capacity-aware dispatch.
 
 Not covered black-box: `unknown_delivery` (either direction) and `already_resolved`, which an SDK cannot provoke
 against Tron without forging frames; Tron's own `backend/tests/runner_protocol.rs` covers them.
