@@ -436,6 +436,12 @@ export interface components {
             /** @enum {string} */
             kind: "organization";
             org_id: components["schemas"]["OrgId"];
+            /**
+             * @description The organization's display name as the membership source reports
+             *     it. Display only, never a scoping key; absent when the source has
+             *     no name to give.
+             */
+            org_name?: string | null;
         };
         AdminJobCount: {
             /** Format: int64 */
@@ -710,6 +716,8 @@ export interface components {
             miss_grace_seconds?: number | null;
             missed_run: components["schemas"]["JobMissedRun"];
             name: string;
+            /** @description What to do when an occurrence is due while an earlier run is active. */
+            overlap_policy?: components["schemas"]["OverlapPolicy"];
             /**
              * @description Attempts, backoff and retryable failures for runner deliveries. Omitted
              *     means no retries.
@@ -717,6 +725,8 @@ export interface components {
             retry_policy?: components["schemas"]["RetryPolicy"];
             schedule: components["schemas"]["JobSchedule"];
             target: components["schemas"]["JobTarget"];
+            /** @description IANA time-zone name used to interpret cron schedules. Null means UTC. */
+            time_zone?: string | null;
             webhook_configuration?: null | components["schemas"]["WebhookConfigurationRequest"];
         };
         /**
@@ -759,6 +769,7 @@ export interface components {
              *     pass. Absent when the schedule has no further occurrence.
              */
             next_run_at?: string | null;
+            overlap_policy: components["schemas"]["OverlapPolicy"];
             /**
              * Format: uuid
              * @description The identifier of the job's public page. It identifies the job to the
@@ -768,6 +779,8 @@ export interface components {
             retry_policy: components["schemas"]["RetryPolicy"];
             schedule: components["schemas"]["JobSchedule"];
             target: components["schemas"]["JobTarget"];
+            /** @description IANA time-zone name used to interpret cron schedules. Null means UTC. */
+            time_zone?: string | null;
             /** Format: date-time */
             updated_at: string;
             /** @description Whether anyone holding the public URL can read the job's status. */
@@ -1000,6 +1013,8 @@ export interface components {
          *     sanitised individually at each place it is later used.
          */
         OrgId: string;
+        /** @enum {string} */
+        OverlapPolicy: "allow" | "skip" | "queue_one";
         /** @enum {string} */
         OwnerKind: "user" | "organization";
         /**
@@ -1266,7 +1281,7 @@ export interface components {
             timings: components["schemas"]["RunTimingResponse"];
         };
         /** @enum {string} */
-        RunFailureKind: "webhook_non_success_status" | "webhook_timeout" | "webhook_connect_failed" | "webhook_request_failed" | "webhook_target_invalid" | "webhook_target_blocked" | "delivery_window_expired" | "delivery_interrupted";
+        RunFailureKind: "webhook_non_success_status" | "webhook_timeout" | "webhook_connect_failed" | "webhook_request_failed" | "webhook_target_invalid" | "webhook_target_blocked" | "delivery_window_expired" | "delivery_interrupted" | "runner_deadline_exceeded";
         /**
          * @description Which runs a listing is narrowed to. Defined over the stored run
          *     vocabulary ([`RunStatus`], [`RunStatusReason`]) rather than a parallel set
@@ -1287,7 +1302,7 @@ export interface components {
         /** @enum {string} */
         RunOutcomeKind: "ok" | "err";
         /** @enum {string} */
-        RunStatus: "pending" | "delivering" | "accepted" | "running" | "succeeded" | "failed" | "timed_out" | "cancelled" | "skipped" | "failed_to_deliver";
+        RunStatus: "queued" | "pending" | "delivering" | "accepted" | "running" | "succeeded" | "failed" | "timed_out" | "cancelled" | "skipped" | "failed_to_deliver";
         /**
          * @description How a runner run's status follows from the job's delivery mode and the
          *     run's deliveries. Computed with the dispatcher's own settlement rule from
@@ -1347,7 +1362,7 @@ export interface components {
             verdict: components["schemas"]["RunVerdict"];
         };
         /** @enum {string} */
-        RunStatusReason: "missed_policy_skip" | "missed_deferral_limit" | "missed_deferred" | "no_runner_in_window" | "personal_feature_disabled" | "job_deleted";
+        RunStatusReason: "missed_policy_skip" | "missed_deferral_limit" | "missed_deferred" | "no_runner_in_window" | "personal_feature_disabled" | "job_deleted" | "overlap_skipped";
         /**
          * @description Canonical, nullable timing fields shared by private and public run and
          *     runner-delivery responses. Values are signed millisecond differences
