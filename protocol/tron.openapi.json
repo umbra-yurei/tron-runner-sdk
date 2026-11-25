@@ -2549,6 +2549,13 @@
               },
               "org_id": {
                 "$ref": "#/components/schemas/OrgId"
+              },
+              "org_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The organization's display name as the membership source reports\nit. Display only, never a scoping key; absent when the source has\nno name to give."
               }
             }
           }
@@ -3298,6 +3305,10 @@
           "name": {
             "type": "string"
           },
+          "overlap_policy": {
+            "$ref": "#/components/schemas/OverlapPolicy",
+            "description": "What to do when an occurrence is due while an earlier run is active."
+          },
           "retry_policy": {
             "$ref": "#/components/schemas/RetryPolicy",
             "description": "Attempts, backoff and retryable failures for runner deliveries. Omitted\nmeans no retries."
@@ -3307,6 +3318,13 @@
           },
           "target": {
             "$ref": "#/components/schemas/JobTarget"
+          },
+          "time_zone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "IANA time-zone name used to interpret cron schedules. Null means UTC."
           },
           "webhook_configuration": {
             "oneOf": [
@@ -3331,6 +3349,7 @@
           "missed_run",
           "delivery_timeout_seconds",
           "lateness_threshold_seconds",
+          "overlap_policy",
           "miss_grace_window",
           "effective_miss_grace_seconds",
           "delivery_mode",
@@ -3408,6 +3427,9 @@
             "format": "date-time",
             "description": "When the scheduler will next create a run for this job, which is what\na countdown should count down to. At or before the current time it\nmeans an occurrence is already due and awaiting the scheduler's next\npass. Absent when the schedule has no further occurrence."
           },
+          "overlap_policy": {
+            "$ref": "#/components/schemas/OverlapPolicy"
+          },
           "public_id": {
             "type": "string",
             "format": "uuid",
@@ -3421,6 +3443,13 @@
           },
           "target": {
             "$ref": "#/components/schemas/JobTarget"
+          },
+          "time_zone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "IANA time-zone name used to interpret cron schedules. Null means UTC."
           },
           "updated_at": {
             "type": "string",
@@ -3963,6 +3992,14 @@
         "type": "string",
         "description": "An organization identifier, as named by the caller via the\n[`X_CRUMA_ORG`] header.\n\nThis value reaches logs and (eventually) database lookups, so it is\nconstrained to an opaque identifier charset at the edge -- ASCII\nalphanumerics, `-`, and `_` only -- via [`FromStr`], rather than being\nsanitised individually at each place it is later used."
       },
+      "OverlapPolicy": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "skip",
+          "queue_one"
+        ]
+      },
       "OwnerKind": {
         "type": "string",
         "enum": [
@@ -4162,7 +4199,7 @@
               },
               {
                 "$ref": "#/components/schemas/PublicRunResponse",
-                "description": "The newest run that ended with a result (not a skipped occurrence)."
+                "description": "The newest run that has ended, skipped occurrences included, so it\nalways agrees with `runs`: absent only while no run has ended."
               }
             ]
           },
@@ -4590,7 +4627,8 @@
           "webhook_target_invalid",
           "webhook_target_blocked",
           "delivery_window_expired",
-          "delivery_interrupted"
+          "delivery_interrupted",
+          "runner_deadline_exceeded"
         ]
       },
       "RunListFilter": {
@@ -4640,6 +4678,7 @@
       "RunStatus": {
         "type": "string",
         "enum": [
+          "queued",
           "pending",
           "delivering",
           "accepted",
@@ -4751,7 +4790,8 @@
           "missed_deferred",
           "no_runner_in_window",
           "personal_feature_disabled",
-          "job_deleted"
+          "job_deleted",
+          "overlap_skipped"
         ]
       },
       "RunTimingResponse": {
