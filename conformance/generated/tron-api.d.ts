@@ -1362,7 +1362,7 @@ export interface components {
             verdict: components["schemas"]["RunVerdict"];
         };
         /** @enum {string} */
-        RunStatusReason: "missed_policy_skip" | "missed_deferral_limit" | "missed_deferred" | "no_runner_in_window" | "personal_feature_disabled" | "job_deleted" | "overlap_skipped";
+        RunStatusReason: "missed_policy_skip" | "missed_deferral_limit" | "missed_deferred" | "no_runner_in_window" | "personal_feature_disabled" | "job_deleted" | "overlap_skipped" | "overlap_queued";
         /**
          * @description Canonical, nullable timing fields shared by private and public run and
          *     runner-delivery responses. Values are signed millisecond differences
@@ -2758,7 +2758,9 @@ export interface operations {
     };
     triggerJobRun: {
         parameters: {
-            query?: never;
+            query?: {
+                run_anyway?: boolean;
+            };
             header?: {
                 /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
                 "x-cruma-org"?: components["schemas"]["OrgId"];

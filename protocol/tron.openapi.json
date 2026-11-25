@@ -1162,6 +1162,14 @@
             }
           },
           {
+            "name": "run_anyway",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "x-cruma-org",
             "in": "header",
             "description": "The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503.",
@@ -4791,7 +4799,8 @@
           "no_runner_in_window",
           "personal_feature_disabled",
           "job_deleted",
-          "overlap_skipped"
+          "overlap_skipped",
+          "overlap_queued"
         ]
       },
       "RunTimingResponse": {
