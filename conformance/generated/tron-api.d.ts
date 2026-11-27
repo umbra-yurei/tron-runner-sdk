@@ -137,6 +137,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jobs/{job_id}/notification-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getJobNotificationRules"];
+        put: operations["putJobNotificationRules"];
+        post?: never;
+        delete: operations["deleteJobNotificationRules"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}/notification-rules/test-send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["testSendJobNotificationRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs/{job_id}/restore": {
         parameters: {
             query?: never;
@@ -179,6 +211,22 @@ export interface paths {
         get: operations["listJobRuns"];
         put?: never;
         post: operations["triggerJobRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getJobRun"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -302,6 +350,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notification-rules/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getDefaultNotificationRule"];
+        put: operations["putDefaultNotificationRule"];
+        post?: never;
+        delete: operations["deleteDefaultNotificationRule"];
         options?: never;
         head?: never;
         patch?: never;
@@ -564,7 +628,7 @@ export interface components {
          *     enum, not a bare string, so clients match on a value the compiler knows.
          * @enum {string}
          */
-        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "mcp_unavailable" | "invalid_mcp_request" | "unknown_mcp_tool" | "invalid_job_configuration" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "test_event_needs_webhook_job" | "invalid_run_search" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "live_job_limit_reached" | "database_unavailable";
+        ApiErrorCode: "not_found" | "job_deleted" | "invalid_acting_org" | "forbidden" | "org_membership_unavailable" | "tron_feature_disabled" | "tron_feature_unavailable" | "mcp_unavailable" | "invalid_mcp_request" | "unknown_mcp_tool" | "invalid_job_configuration" | "invalid_notification_rule" | "blocked_webhook_target" | "invalid_worker_api_key_request" | "invalid_admin_usage_range" | "admin_scope_counts_too_large" | "test_event_needs_webhook_job" | "invalid_run_search" | "invalid_timing_range" | "timing_range_too_large" | "credential_generation_failed" | "webhook_signing_secret_unavailable" | "webhook_signing_secret_conflict" | "live_job_limit_reached" | "database_unavailable";
         /**
          * @description How the backend authenticates requests.
          *
@@ -635,6 +699,22 @@ export interface components {
              */
             samples: number;
         };
+        /** @description The rule that actually applies to a job. */
+        EffectiveNotificationRules: {
+            rule: components["schemas"]["NotificationRule"];
+            /** @enum {string} */
+            source: "job_rule";
+        } | {
+            rule: components["schemas"]["NotificationRule"];
+            /** @enum {string} */
+            source: "owner_default";
+        } | {
+            /** @enum {string} */
+            source: "opted_out";
+        } | {
+            /** @enum {string} */
+            source: "none";
+        };
         HandlerCapability: {
             /** Format: int32 */
             connected_session_count: number;
@@ -701,6 +781,28 @@ export interface components {
             limit: number;
             /** @enum {string} */
             policy: "deferred_until_runner";
+        };
+        /** @description A job's own notification setting and what applies to it after inheritance. */
+        JobNotificationRulesResponse: {
+            effective: components["schemas"]["EffectiveNotificationRules"];
+            own?: null | components["schemas"]["JobNotificationSetting"];
+        };
+        /** @description What a job itself says about notifications. */
+        JobNotificationSetting: {
+            /** @enum {string} */
+            mode: "rules";
+            rule: components["schemas"]["NotificationRule"];
+        } | {
+            /** @enum {string} */
+            mode: "opt_out";
+        };
+        /** @description A job's PUT body: its own rule, or an opt-out of the owner default. */
+        JobNotificationWrite: (components["schemas"]["NotificationRuleWrite"] & {
+            /** @enum {string} */
+            mode: "rules";
+        }) | {
+            /** @enum {string} */
+            mode: "opt_out";
         };
         /** @description Full, typed configuration accepted when creating or replacing a job. */
         JobRequest: {
@@ -1003,6 +1105,92 @@ export interface components {
         };
         /** @enum {string} */
         MissedRunPolicy: "skip" | "deferred_until_runner";
+        NotificationChannel: {
+            addresses: string[];
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "email";
+            /**
+             * @description Organization members chosen by subject; only valid for an
+             *     organization's rules. Resolved to addresses when sending.
+             */
+            org_member_subjects: string[];
+        } | {
+            /** @description Whether a signing secret is stored. The value is never returned. */
+            has_signing_secret: boolean;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "webhook";
+            payload_format: components["schemas"]["NotificationPayloadFormat"];
+            url: string;
+        };
+        /** @enum {string} */
+        NotificationChannelKind: "email" | "webhook";
+        NotificationChannelWrite: {
+            addresses?: string[];
+            /** @enum {string} */
+            kind: "email";
+            org_member_subjects?: string[];
+        } | {
+            /**
+             * Format: uuid
+             * @description An existing channel of this rule to update; needed for
+             *     `signing_secret` `keep` to retain its secret.
+             */
+            id?: string | null;
+            /** @enum {string} */
+            kind: "webhook";
+            payload_format: components["schemas"]["NotificationPayloadFormat"];
+            signing_secret?: components["schemas"]["SigningSecretChange"];
+            url: string;
+        };
+        /** @description The acting owner's default rule. */
+        NotificationDefaultResponse: {
+            rule?: null | components["schemas"]["NotificationRule"];
+        };
+        /** @enum {string} */
+        NotificationEvent: "failed" | "recovered" | "missed" | "late" | "every_run";
+        /** @enum {string} */
+        NotificationPayloadFormat: "generic" | "slack_teams";
+        /** @description A stored rule as the API shows it. Secret values are never part of it. */
+        NotificationRule: {
+            channels: components["schemas"]["NotificationChannel"][];
+            events: components["schemas"]["NotificationEvent"][];
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description While a failure/miss/late condition persists, repeat the notification
+             *     at this interval (seconds). Absent: notify once.
+             */
+            reminder_interval_seconds?: number | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        NotificationRuleWrite: {
+            channels: components["schemas"]["NotificationChannelWrite"][];
+            /** @description Events to notify on; at least one, duplicates ignored. */
+            events: components["schemas"]["NotificationEvent"][];
+            /** Format: int32 */
+            reminder_interval_seconds?: number | null;
+        };
+        NotificationTestSendOutcome: {
+            /** Format: uuid */
+            channel_id: string;
+            channel_kind: components["schemas"]["NotificationChannelKind"];
+            failure_kind?: null | components["schemas"]["RunFailureKind"];
+            /** Format: int32 */
+            http_status_code?: number | null;
+            response_excerpt?: string | null;
+            status: components["schemas"]["NotificationTestSendStatus"];
+        };
+        NotificationTestSendResponse: {
+            outcomes: components["schemas"]["NotificationTestSendOutcome"][];
+        };
+        /** @enum {string} */
+        NotificationTestSendStatus: "succeeded" | "failed";
         /**
          * @description An organization identifier, as named by the caller via the
          *     [`X_CRUMA_ORG`] header.
@@ -1281,7 +1469,7 @@ export interface components {
             timings: components["schemas"]["RunTimingResponse"];
         };
         /** @enum {string} */
-        RunFailureKind: "webhook_non_success_status" | "webhook_timeout" | "webhook_connect_failed" | "webhook_request_failed" | "webhook_target_invalid" | "webhook_target_blocked" | "delivery_window_expired" | "delivery_interrupted" | "runner_deadline_exceeded";
+        RunFailureKind: "webhook_non_success_status" | "webhook_timeout" | "webhook_connect_failed" | "webhook_request_failed" | "webhook_target_invalid" | "webhook_target_blocked" | "email_recipient_lookup_failed" | "email_request_failed" | "email_delivery_failed" | "delivery_window_expired" | "delivery_interrupted" | "runner_deadline_exceeded";
         /**
          * @description Which runs a listing is narrowed to. Defined over the stored run
          *     vocabulary ([`RunStatus`], [`RunStatusReason`]) rather than a parallel set
@@ -1672,6 +1860,18 @@ export interface components {
             reason: components["schemas"]["ProtocolViolation"];
             /** @enum {string} */
             type: "protocol_error";
+        };
+        /** @description What to do with a webhook channel's signing secret on write. */
+        SigningSecretChange: {
+            /** @enum {string} */
+            action: "keep";
+        } | {
+            /** @enum {string} */
+            action: "clear";
+        } | {
+            /** @enum {string} */
+            action: "set";
+            value: string;
         };
         /** @enum {string} */
         TargetKind: "webhook" | "runner";
@@ -2497,6 +2697,308 @@ export interface operations {
             };
         };
     };
+    getJobNotificationRules: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job's own setting and the rule that applies to it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobNotificationRulesResponse"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    putJobNotificationRules: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobNotificationWrite"];
+            };
+        };
+        responses: {
+            /** @description Stored; signing secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobNotificationRulesResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    deleteJobNotificationRules: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job's own setting is removed (also when it had none); it inherits the owner default again */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    testSendJobNotificationRule: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Outcome for every attempted webhook channel in the stored effective rule */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationTestSendResponse"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
     restoreJob: {
         parameters: {
             query?: never;
@@ -2811,6 +3313,81 @@ export interface operations {
             };
             /** @description The job is deleted; restore it first */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description The database is unavailable */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    getJobRun: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path: {
+                /** @description Job id */
+                job_id: string;
+                /** @description Run id */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRunResponse"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3472,6 +4049,202 @@ export interface operations {
              *     X-Cruma-Org, or is a service principal, which gets no organization access
              */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    getDefaultNotificationRule: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The acting owner's default rule, if set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDefaultResponse"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    putDefaultNotificationRule: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationRuleWrite"];
+            };
+        };
+        responses: {
+            /** @description Stored; signing secrets are never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDefaultResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            /**
+             * @description Membership of the named organization could not be determined, so the
+             *     request was refused
+             */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+        };
+    };
+    deleteDefaultNotificationRule: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The organization the caller is acting in. Omit it entirely for personal context. The caller must be an active member of the named organization: a non-member (or a service principal) is refused with 403, and a membership check that cannot be completed with 503. */
+                "x-cruma-org"?: components["schemas"]["OrgId"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The default is removed (also when none was set) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /**
+             * @description The caller is not an active member of the organization named by
+             *     X-Cruma-Org, or is a service principal, which gets no organization access
+             */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorBody"];
+                };
+            };
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
