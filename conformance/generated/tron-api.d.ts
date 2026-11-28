@@ -1190,7 +1190,7 @@ export interface components {
             outcomes: components["schemas"]["NotificationTestSendOutcome"][];
         };
         /** @enum {string} */
-        NotificationTestSendStatus: "succeeded" | "failed";
+        NotificationTestSendStatus: "succeeded" | "failed" | "channel_not_configured";
         /**
          * @description An organization identifier, as named by the caller via the
          *     [`X_CRUMA_ORG`] header.
@@ -2941,7 +2941,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Outcome for every attempted webhook channel in the stored effective rule */
+            /** @description Outcome for every webhook and email channel in the stored effective rule */
             200: {
                 headers: {
                     [name: string]: unknown;

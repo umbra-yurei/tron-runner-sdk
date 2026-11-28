@@ -1108,7 +1108,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Outcome for every attempted webhook channel in the stored effective rule",
+            "description": "Outcome for every webhook and email channel in the stored effective rule",
             "content": {
               "application/json": {
                 "schema": {
@@ -5137,7 +5137,8 @@
         "type": "string",
         "enum": [
           "succeeded",
-          "failed"
+          "failed",
+          "channel_not_configured"
         ]
       },
       "OrgId": {
